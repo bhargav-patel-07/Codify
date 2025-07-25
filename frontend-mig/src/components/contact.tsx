@@ -1,11 +1,9 @@
 "use client";
 
-import { GridSmallBackgroundDemo } from "@/components/ui/background";
 
 const ContactPage = () => {
   return (
     <div className="container mx-auto px-4 py-16">
-      <GridSmallBackgroundDemo />
       <h1 className="text-4xl font-bold text-center mb-8">Contact Us</h1>
       <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg">
         {/* Add your contact form here */}

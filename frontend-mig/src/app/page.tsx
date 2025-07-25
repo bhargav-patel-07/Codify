@@ -1,15 +1,11 @@
-import { GridSmallBackgroundDemo } from "@/components/ui/background";
+import { NavbarWrapper } from "@/components/ui/navbar";
 import Homepage from "@/components/homepage";
-import Contact from "@/components/contact";
-import Features from "@/components/features";
 
 export default function Home() {
   return (
     <main>
-      <GridSmallBackgroundDemo />
+      <NavbarWrapper />
       <Homepage />
-      <Features />
-      <Contact />
     </main>
   );
 }
