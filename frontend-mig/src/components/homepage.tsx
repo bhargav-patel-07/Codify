@@ -1,9 +1,11 @@
 "use client";
 
-import { Button } from "@heroui/react";
+import { Button} from "@heroui/react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Switch from "./ui/Switch";
 import Input from "./ui/input";
+
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -33,24 +35,9 @@ const Homepage = () => {
             </p>
             
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-              <Link href="/generate" passHref>
-                <Button 
-                  size="lg" 
-                  color="primary" 
-                  className="px-8 py-6 text-lg font-semibold"
-                >
-                  Generate Code Now
-                </Button>
-              </Link>
-              <Link href="#features" passHref>
-                <Button 
-                  size="lg" 
-                  variant="flat" 
-                  className="px-8 py-6 text-lg font-semibold"
-                >
-                  Learn More
-                </Button>
-              </Link>
+              <div className="w-full max-w-4xl flex justify-center">
+  <Switch />
+</div>
             </div>
           </motion.div>
           
@@ -58,12 +45,25 @@ const Homepage = () => {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="fixed bottom-0 left-0 right-0 flex justify-center p-6"
+            className="fixed bottom-0 left-0 right-0 flex justify-center p-4 sm:p-6 w-full"
+            style={{
+              position: 'fixed',
+              bottom: '0',
+              left: '0',
+              right: '0',
+              padding: '1rem',
+              backgroundColor: 'transparent',
+              zIndex: 50,
+              transform: 'translate3d(0,0,0)' // Force hardware acceleration
+            }}
           >
-            <div className="w-full max-w-4xl">
-              <div className="p-4 rounded-t-xl shadow-lg">
-                <Input />
-              </div>
+            <div className="w-full max-w-5xl px-0" style={{
+              width: '100%',
+              maxWidth: '100%',
+              margin: '0 auto',
+              padding: '0 0.5rem'
+            }}>
+              <Input />
             </div>
           </motion.div>
         </div>

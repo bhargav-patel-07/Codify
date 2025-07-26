@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Menu, X, Home, User, Settings, Coffee } from "lucide-react";
+import { Menu, X, Home, User, Settings, Coffee, TestTubeIcon, Code } from "lucide-react";
 
 export const AcmeLogo = () => (
   <svg fill="none" height="36" viewBox="0 0 32 32" width="36">
@@ -53,6 +53,8 @@ export function MobileNavbar() {
     { name: "Home", href: "#", icon: <Home size={20} /> },
     { name: "Features", href: "#features", icon: <Settings size={20} /> },
     { name: "Contact", href: "#contact", icon: <User size={20} /> },
+    { name: "Generate Code", href: "#contact", icon: <Code size={20} /> },
+    { name: "Test Code", href: "#contact", icon: <TestTubeIcon size={20} /> }
   ];
 
   return (
@@ -86,7 +88,7 @@ export function MobileNavbar() {
           )}
           <a
             href="/signup"
-            className="bg-primary text-white px-2.5 py-1 text-xs rounded-md font-medium hover:bg-primary/80 transition whitespace-nowrap"
+            className="bg-blue-100 text-blue-700 px-4 py-2 text-sm rounded-md font-medium hover:bg-blue-200 transition whitespace-nowrap"
           >
             {isMedium ? 'Get Started' : 'Sign Up'}
           </a>
@@ -194,7 +196,9 @@ export function DesktopNavbar() {
   );
 }
 
-export function NavbarWrapper() {
+function NavbarWrapper() {
   const isMobile = useIsMobile();
   return <>{isMobile ? <MobileNavbar /> : <DesktopNavbar />}</>;
 }
+
+export default NavbarWrapper;

@@ -1,7 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 
 const Input = () => {
+  const [message, setMessage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Handle input focus for mobile devices
+  useEffect(() => {
+    const handleFocus = () => {
+      // Add a small timeout to ensure the keyboard is shown
+      setTimeout(() => {
+        inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    };
+
+    const currentInput = inputRef.current;
+    currentInput?.addEventListener('focus', handleFocus);
+
+    return () => {
+      currentInput?.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   return (
     <StyledWrapper>
       <div className="messageBox">
@@ -16,7 +37,15 @@ const Input = () => {
           </label>
           <input name="file" id="file" type="file" />
         </div>
-        <input id="messageInput" type="text" placeholder="Message..." required />
+        <input
+          ref={inputRef}
+          id="messageInput"
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Type your message here..."
+          className="message-input"
+        />
         <button id="sendButton">
           <svg viewBox="0 0 664 663" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M646.293 331.888L17.7538 17.6187L155.245 331.888M646.293 331.888L17.753 646.157L155.245 331.888M646.293 331.888L318.735 330.228L155.245 331.888" fill="none" />
@@ -32,18 +61,38 @@ const StyledWrapper = styled.div`
   .messageBox {
     width: 100%;
     min-width: 0;
-    max-width: 100%;
-    height: 56px;
+    max-width: 900px; /* More compact width for desktop */
+    height: 60px; /* Reduced height for desktop */
     display: flex;
     align-items: center;
-    background: none;
-    padding: 0 16px;
-    border: 1px solid black;
-    border-radius: 12px;
+    padding: 0 12px;
+    background: transparent;
+    border: 1px solid #000000;
+    border-radius: 6px; /* More subtle border radius */
+    position: relative;
+    z-index: 100;
+    margin: 0 auto;
+    box-sizing: border-box;
+    
+    @media (max-width: 1024px) {
+      max-width: 90%;
+    }
+    
+    @media (max-width: 768px) {
+      max-width: 95%;
+    }
+    
+    @media (max-width: 640px) {
+      height: 60px;
+      padding: 0 16px;
+      border-radius: 0;
+      font-size: 16px;
+      max-width: 100%;
+      width: 100%;
+      margin: 0 auto;
+    }
   }
-  .messageBox:focus-within {
-    border: none;
-  }
+  
   .fileUploadWrapper {
     width: fit-content;
     height: 100%;
@@ -68,6 +117,11 @@ const StyledWrapper = styled.div`
   .fileUploadWrapper label svg {
     height: 20px;
     width: 20px;
+    
+    @media (max-width: 640px) {
+      height: 26px;
+      width: 26px;
+    }
   }
   .fileUploadWrapper label svg path {
     transition: all 0.3s;
@@ -104,12 +158,19 @@ const StyledWrapper = styled.div`
     width: 100%;
     min-width: 0;
     height: 100%;
-    background: none;
+    background: transparent;
     outline: none;
     border: none;
-    padding: 0 12px;
-    color:rgb(0, 0, 0);
-    font-size: 16px;
+    padding: 0 12px 0 8px;
+    color: #000000;
+    font-size: 14px; /* Slightly smaller font for desktop */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-overflow-scrolling: touch;
+    
+    @media (max-width: 640px) {
+      font-size: 20px;
+      padding: 0 20px 0 12px;
+    }
   }
   #messageInput:focus ~ #sendButton svg path,
   #messageInput:valid ~ #sendButton svg path {
