@@ -19,6 +19,9 @@ coverage/
 build/
 dist/
 
+# Tools
+bfg.jar
+
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
