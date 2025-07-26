@@ -12,10 +12,19 @@ const nextConfig: NextConfig = {
     // Remove console.logs in production
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false,
     
-    // Enable styled-components support in production
-    ...(process.env.NODE_ENV === 'production' && {
-      styledComponents: true,
-    }),
+    // Enable styled-components support with proper configuration
+    styledComponents: {
+      // Enable display names in development for better debugging
+      displayName: process.env.NODE_ENV !== 'production',
+      // Enable server-side rendering
+      ssr: true,
+      // Enable CSS source maps in development
+      cssProp: true,
+      // Add component display name as a CSS class name
+      fileName: false,
+      // Add support for the 'as' prop
+      pure: true,
+    },
   },
   
   // Configure images
