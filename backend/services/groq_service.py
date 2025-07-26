@@ -11,23 +11,31 @@ class GroqCodeGenerator:
     """Code generation using Groq API."""
     
     def __init__(self, api_key: str = None):
-       self.api_key = api_key or os.getenv("GROQ_API_KEY")
-       if not self.api_key:
-           raise ValueError("Groq API key not found. Please set GROQ_API_KEY in .env file.")
-       self.base_url = "https://api.groq.com/openai/v1/chat/completions"
+        """Initialize the GroqCodeGenerator.
         
-       # Available Groq models optimized for code generation
-       self.models = {
-           "python": "llama3-70b-8192",
-           "javascript": "llama3-70b-8192",
-           "java": "llama3-70b-8192",
-           "cpp": "llama3-70b-8192",
-           "general": "llama3-70b-8192",
-           "fast": "llama3-8b-8192"  # Faster alternative
-       }
-       
-       # Headers for requests
-       self.headers = {
+        Args:
+            api_key: Optional API key. If not provided, will try to get from GROQ_API_KEY environment variable.
+        """
+        self.api_key = api_key or os.getenv("GROQ_API_KEY")
+        if not self.api_key:
+            raise ValueError(
+                "Groq API key not found. Please set GROQ_API_KEY environment variable "
+                "or pass it as an argument to the constructor."
+            )
+        self.base_url = "https://api.groq.com/openai/v1/chat/completions"
+        
+        # Available Groq models optimized for code generation
+        self.models = {
+            "python": "llama3-70b-8192",
+            "javascript": "llama3-70b-8192",
+            "java": "llama3-70b-8192",
+            "cpp": "llama3-70b-8192",
+            "general": "llama3-70b-8192",
+            "fast": "llama3-8b-8192"  # Faster alternative
+        }
+        
+        # Headers for requests
+        self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
