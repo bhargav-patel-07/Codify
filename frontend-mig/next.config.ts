@@ -44,12 +44,7 @@ const nextConfig: NextConfig = {
   
   // Configure webpack
   webpack: (config, { isServer }) => {
-    // Add styled-components support
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'styled-components': require.resolve('styled-components'),
-    };
-    
+    // Important: return the modified config
     return config;
   },
   
