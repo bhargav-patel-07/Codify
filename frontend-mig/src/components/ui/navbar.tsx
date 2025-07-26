@@ -3,15 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X, Home, User, Settings, Coffee, TestTubeIcon, Code } from "lucide-react";
 
-export const AcmeLogo = () => (
-  <svg fill="none" height="36" viewBox="0 0 32 32" width="36">
-    <path
-      clipRule="evenodd"
-      d="M17.6482 10.1305L15.8785 7.02583L7.02979 22.5499H10.5278L17.6482 10.1305ZM19.8798 14.0457L18.11 17.1983L19.394 19.4511H16.8453L15.1056 22.5499H24.7272L19.8798 14.0457Z"
-      fill="currentColor"
-      fillRule="evenodd"
-    />
-  </svg>
+export const CodifyLogo = () => (
+  <img 
+    src="/codify.png" 
+    alt="Codify Logo" 
+    className="h-9 w-auto" 
+    width={36} 
+    height={36}
+  />
 );
 
 const useIsMobile = () => {
@@ -68,9 +67,9 @@ export function MobileNavbar() {
           >
             {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <div className="flex items-center gap-1.5">
-            <AcmeLogo />
-            <span className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">ACME</span>
+          <div className="flex items-center gap-2">
+            <CodifyLogo />
+            <span className="font-bold text-lg text-gray-900 dark:text-white">Codify</span>
           </div>
         </div>
         
@@ -138,8 +137,8 @@ export function DesktopNavbar() {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <AcmeLogo />
-          <span className="font-bold text-base sm:text-lg text-gray-900 dark:text-white">ACME</span>
+          <CodifyLogo />
+          <span className="font-bold text-base sm:text-lg text-gray-900 dark:text-white">Codify</span>
         </div>
 
         {/* Navigation Links */}
