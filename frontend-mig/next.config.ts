@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
     
     // Remove console.logs in production
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false,
+    
+    // Enable styled-components support in production
+    ...(process.env.NODE_ENV === 'production' && {
+      styledComponents: true,
+    }),
   },
   
   // Configure images
@@ -39,7 +44,12 @@ const nextConfig: NextConfig = {
   
   // Configure webpack
   webpack: (config, { isServer }) => {
-    // Important: return the modified config
+    // Add styled-components support
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'styled-components': require.resolve('styled-components'),
+    };
+    
     return config;
   },
   
