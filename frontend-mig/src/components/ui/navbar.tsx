@@ -7,9 +7,9 @@ export const CodifyLogo = () => (
   <img 
     src="/codify.png" 
     alt="Codify Logo" 
-    className="h-9 w-auto" 
-    width={36} 
-    height={36}
+    className="h-10 w-auto" 
+    width={100} 
+    height={100}
   />
 );
 
@@ -69,7 +69,7 @@ export function MobileNavbar() {
           </button>
           <div className="flex items-center gap-2">
             <CodifyLogo />
-            <span className="font-bold text-lg text-gray-900 dark:text-white">Codify</span>
+            
           </div>
         </div>
         
@@ -138,7 +138,6 @@ export function DesktopNavbar() {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <CodifyLogo />
-          <span className="font-bold text-base sm:text-lg text-gray-900 dark:text-white">Codify</span>
         </div>
 
         {/* Navigation Links */}

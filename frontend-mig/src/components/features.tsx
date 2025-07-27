@@ -1,63 +1,85 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
+import {
+  IconArrowWaveRightUp,
+  IconBoxAlignRightFilled,
+  IconBoxAlignTopLeft,
+  IconClipboardCopy,
+  IconFileBroken,
+  IconSignature,
+  IconTableColumn,
+} from "@tabler/icons-react";
 import { GridSmallBackgroundDemo } from "./ui/background";
-import { Card, CardHeader, CardBody, CardFooter } from "@nextui-org/react";
-import React from "react";
 
-const features = [
+const Skeleton = () => (
+  <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-neutral-200 dark:from-neutral-900 dark:to-neutral-800 to-neutral-100"></div>
+);
+
+const featureItems = [
   {
-    title: "Code Generation",
-    description: "Generate clean, efficient, and well-documented code with AI assistance.",
-    icon: "🧠"
+    title: "Generate Unlimited Code",
+    description: "Anyone can generate or edit code absolutely free with signle prompt.",
+    header: <Skeleton />,
+    icon: <IconClipboardCopy className="h-4 w-4 text-neutral-500" />,
+  },
+  {
+    title: "Test Unlimited Code",
+    description: "You can test your code absolutely free.",
+    header: <Skeleton />,
+    icon: <IconFileBroken className="h-4 w-4 text-neutral-500" />,
+  },
+  {
+    title: "Generate Logic",
+    description: "You can generate logic absolutely free.",
+    header: <Skeleton />,
+    icon: <IconSignature className="h-4 w-4 text-neutral-500" />,
   },
   {
     title: "Live Preview",
-    description: "See your code in action with our integrated live preview functionality.",
-    icon: "👁️"
+    description: "You can preview your code absolutely free.",
+    header: <Skeleton />,
+    icon: <IconTableColumn className="h-4 w-4 text-neutral-500" />,
   },
   {
-    title: "Smart Suggestions",
-    description: "Get intelligent code completions and suggestions as you type.",
-    icon: "💡"
+    title: "Generate Unlimted Text",
+    description: "You can generate text absolutely free.",
+    header: <Skeleton />,
+    icon: <IconArrowWaveRightUp className="h-4 w-4 text-neutral-500" />,
   },
   {
-    title: "Version Control",
-    description: "Easily manage and track changes to your code with built-in version control.",
-    icon: "🔄"
-  }
+    title: "You can able to Processing unlimited Image",
+    description: "You can able to Processing unlimited Image absolutely free.",
+    header: <Skeleton />,
+    icon: <IconBoxAlignTopLeft className="h-4 w-4 text-neutral-500" />,
+  },
+  {
+    title: "Fast Response",
+    description: "You can get fast response absolutely free.",
+    header: <Skeleton />,
+    icon: <IconBoxAlignRightFilled className="h-4 w-4 text-neutral-500" />,
+  },
 ];
 
-const Features = () => {
+export default function Features() {
   return (
-    <section className="py-16 bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Powerful Features
-          </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Everything you need to boost your productivity and build amazing applications
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature, index) => (
-            <Card key={index} className="p-6 hover:shadow-lg transition-shadow duration-300 h-full">
-              <CardHeader className="flex flex-col items-center">
-                <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold text-center">{feature.title}</h3>
-              </CardHeader>
-              <CardBody>
-                <p className="text-gray-600 dark:text-gray-300 text-center">
-                  {feature.description}
-                </p>
-              </CardBody>
-            </Card>
+    <div className="relative">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
+        <BentoGrid className="max-w-7xl mx-auto">
+          {featureItems.map((item, i) => (
+            <BentoGridItem
+              key={i}
+              title={item.title}
+              description={item.description}
+              header={item.header}
+              icon={item.icon}
+              className={i === 3 || i === 6 ? "md:col-span-2" : ""}
+            />
           ))}
-        </div>
+        </BentoGrid>
       </div>
-    </section>
+    </div>
   );
-};
-
-export default Features;
+}

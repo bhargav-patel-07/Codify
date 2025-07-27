@@ -1,74 +1,45 @@
 "use client";
 
-import { Button} from "@heroui/react";
-import { motion } from "framer-motion";
-import Link from "next/link";
 import Switch from "./ui/Switch";
 import Input from "./ui/input";
-
-
-const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
+import NavbarWrapper from "./ui/navbar";
 
 const Homepage = () => {
   return (
-    <section className="relative">
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
-        <div className="text-center">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeInUp}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl mx-auto"
-          >
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+    <div className="relative min-h-screen flex flex-col">
+      <NavbarWrapper />
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="text-center space-y-4 sm:space-y-6">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white">
               Create & Test Your Code
-              <span className="text-indigo-600 dark:text-indigo-400 block mt-2">Absolutely Free</span>
+              <span className="text-indigo-600 dark:text-indigo-400 block mt-1 sm:mt-2">Absolutely Free</span>
             </h1>
             
-            <p className="mt-6 text-xl text-gray-600 dark:text-gray-300">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 px-2 sm:px-0">
               Accelerate your development workflow with our intelligent code generation and live preview features.
-              Focus on what matters most - building great products.
+              <span className="block sm:inline"> Focus on what matters most - building great products.</span>
             </p>
             
-            <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-              <div className="w-full max-w-4xl flex justify-center">
-  <Switch />
-</div>
+            <div className="pt-4 sm:pt-6 w-full flex justify-center">
+              <div className="w-full max-w-md px-2 sm:px-0">
+                <div className="flex justify-center">
+                  <Switch />
+                </div>
+              </div>
             </div>
-          </motion.div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="fixed bottom-0 left-0 right-0 flex justify-center p-4 sm:p-6 w-full"
-            style={{
-              position: 'fixed',
-              bottom: '0',
-              left: '0',
-              right: '0',
-              padding: '1rem',
-              backgroundColor: 'transparent',
-              zIndex: 50,
-              transform: 'translate3d(0,0,0)' // Force hardware acceleration
-            }}
-          >
-            <div className="w-full max-w-5xl px-0" style={{
-              width: '100%',
-              maxWidth: '100%',
-              margin: '0 auto',
-              padding: '0 0.5rem'
-            }}>
-              <Input />
-            </div>
-          </motion.div>
+          </div>
         </div>
       </div>
-    </section>
+      
+      <div className="sticky bottom-0 left-0 right-0  px-2 sm:px-4 py-3 z-10">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="w-full max-w-4xl mx-auto">
+            <Input />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
