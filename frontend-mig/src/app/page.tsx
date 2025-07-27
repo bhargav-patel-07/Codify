@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import NavbarWrapper from '@/components/ui/navbar';
 import Homepage from "@/components/homepage";
 import Features from "@/components/features";
 import ContactPage from '@/components/contact';

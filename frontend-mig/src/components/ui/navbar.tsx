@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Menu, X, Home, User, Settings, Coffee, TestTubeIcon, Code } from "lucide-react";
+import Image from 'next/image';
+
 
 export const CodifyLogo = () => (
   <img 

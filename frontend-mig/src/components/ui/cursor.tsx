@@ -160,13 +160,13 @@ export function SmoothCursor({
       }
     };
 
-    let rafId: number;
+    let rafId: number | null = null;
     const throttledMouseMove = (e: MouseEvent) => {
-      if (rafId) return;
+      if (rafId !== null) return;
 
       rafId = requestAnimationFrame(() => {
         smoothMouseMove(e);
-        rafId = 0;
+        rafId = null;
       });
     };
 
@@ -176,7 +176,9 @@ export function SmoothCursor({
     return () => {
       window.removeEventListener("mousemove", throttledMouseMove);
       document.body.style.cursor = "auto";
-      if (rafId) cancelAnimationFrame(rafId);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
     };
   }, [cursorX, cursorY, rotation, scale]);
 
@@ -206,4 +208,3 @@ export function SmoothCursor({
     </motion.div>
   );
 }
-
