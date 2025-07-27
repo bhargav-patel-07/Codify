@@ -1,8 +1,10 @@
 "use client";
 import React from "react";
 import { FloatingDock } from "@/components/ui/floating-dock";
-import { useState } from 'react';
+import { Marquee } from "@/components/ui/marquee";
+import { useState, useEffect } from 'react';
 import { User as IconUser } from "lucide-react";
+import { supabase, FeedbackItem } from "@/lib/supabase";
 import { 
   IconBrandGithub, 
   IconBrandX, 
@@ -12,8 +14,13 @@ import {
   IconX,
   IconSend
 } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
 
-export function FloatingDockDemo() {
+interface FloatingDockDemoProps {
+  className?: string;
+}
+
+export function FloatingDockDemo({ className }: FloatingDockDemoProps) {
   const [showFeedback, setShowFeedback] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -21,26 +28,127 @@ export function FloatingDockDemo() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.message.trim()) return;
+    
+    console.log('Submitting feedback:', { email: formData.email, message: formData.message });
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
-      console.log('Form submitted:', formData);
-      setIsSubmitting(false);
+    try {
+      console.log('Sending to Supabase...');
+      const { data, error, status, statusText } = await supabase
+        .from('feedback')
+        .insert([{ 
+          email: formData.email.trim() || null, 
+          message: formData.message.trim() 
+        }])
+        .select();
+
+      console.log('Supabase response:', { data, error, status, statusText });
+
+      if (error) {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('No data returned from Supabase after insert');
+      }
+
+      console.log('Feedback submitted successfully:', data[0]);
       setIsSubmitted(true);
+      setFormData({ email: '', message: '' });
       
-      // Reset form after 3 seconds
+      // Refresh feedback list
+      console.log('Refreshing feedback list...');
+      const { data: newData, error: fetchError } = await supabase
+        .from('feedback')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (fetchError) {
+        console.error('Error refreshing feedback list:', fetchError);
+      } else {
+        console.log('Fetched feedback items after submit:', newData?.length || 0);
+        setFeedbackList(newData || []);
+      }
+      
       setTimeout(() => {
         setShowFeedback(false);
         setIsSubmitted(false);
-        setFormData({ email: '', message: '' });
       }, 3000);
-    }, 1000);
+    } catch (err) {
+      const error = err as Error & { details?: string; hint?: string; code?: string };
+      console.error('Error in handleSubmit:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        stack: error.stack
+      });
+      setError(`Failed to submit feedback: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
+  // Fetch feedback from Supabase
+  useEffect(() => {
+    const fetchFeedback = async () => {
+      try {
+        console.log('Fetching feedback from Supabase...');
+        console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20) + '...');
+        
+        const { data, error, status } = await supabase
+          .from('feedback')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(20); // Limit to 20 most recent feedbacks
+
+        console.log('Supabase response:', { status, error, data });
+
+        if (error) {
+          console.error('Supabase query error:', error);
+          throw error;
+        }
+
+        if (!data) {
+          console.warn('No data returned from Supabase');
+          setFeedbackList([]);
+          return;
+        }
+
+        console.log('Fetched feedback items:', data.length);
+        setFeedbackList(data);
+        setError(null);
+      } catch (error) {
+        const err = error as Error & { status?: number; code?: string };
+        console.error('Error in fetchFeedback:', {
+          message: err.message,
+          name: err.name,
+          stack: err.stack,
+          status: err.status,
+          code: err.code
+        });
+        setError(`Failed to load feedback: ${err.message || 'Unknown error'}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFeedback();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -88,10 +196,35 @@ export function FloatingDockDemo() {
   ];
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col">
-      {/* Main content area - flex-grow to push the dock to bottom */}
-      <div className="flex-grow container mx-auto px-4 py-20">
-        {/* Your page content will go here */}
+    <div className="min-h-screen w-full">
+      {/* Main content area */}
+      <div className="container mx-auto px-4 py-10">
+        {/* Feedback Marquee Section */}
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">
+            What People Are Saying
+          </h2>
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">Loading feedback...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-4 text-red-500">{error}</div>
+          ) : feedbackList.length > 0 ? (
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-2">
+              <Marquee 
+                feedbackItems={feedbackList}
+                pauseOnHover={true}
+                className="py-6"
+              />
+            </div>
+          ) : (
+            <p className="text-center text-gray-500 dark:text-gray-400">
+              No feedback yet. Be the first to share your thoughts!
+            </p>
+          )}
+        </section>
       </div>
 
       {/* Feedback Button and Popup - Desktop */}
@@ -279,13 +412,24 @@ export function FloatingDockDemo() {
         </div>
       )}
 
-      {/* Floating Dock */}
-      <div className="fixed bottom-4 left-0 right-0 z-50 pointer-events-none">
-        <div className="flex justify-center">
-          <div className="pointer-events-auto">
+      {/* Floating Dock - Responsive positioning */}
+      <div className={cn("fixed bottom-0 left-0 right-0 z-50 flex justify-center p-4", className)}>
+        <div className="pointer-events-auto">
+          {/* Desktop View - Only show on md screens and up */}
+          <div className="hidden md:block">
             <FloatingDock 
               items={links}
+              position="fixed"
               desktopClassName="mx-auto"
+              mobileClassName="hidden"
+            />
+          </div>
+          {/* Mobile View - Only show on screens smaller than md */}
+          <div className="md:hidden">
+            <FloatingDock 
+              items={links}
+              position="fixed"
+              desktopClassName="hidden"
               mobileClassName="mx-auto"
             />
           </div>

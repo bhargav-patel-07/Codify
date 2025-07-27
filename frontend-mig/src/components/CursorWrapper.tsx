@@ -1,40 +1,27 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 
-// Dynamically import SmoothCursor with no SSR
-const SmoothCursor = dynamic(
-  () => import('@/components/ui/cursor'),
-  { 
-    ssr: false,
-    loading: () => null
-  }
+// Dynamically import Cursor with no SSR
+const Cursor = dynamic(
+  () => import('@/components/ui/cursor').then(mod => mod.SmoothCursor),
+  { ssr: false }
 );
 
-// Client-side only component for cursor
 export default function CursorWrapper() {
-  const [shouldRender, setShouldRender] = useState(false);
-  
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') return;
-    
-    const isTouchDevice = () => {
-      // Temporarily disable touch device detection for testing
-      return false;
-      // return (
-      //   'ontouchstart' in window || 
-      //   navigator.maxTouchPoints > 0 || 
-      //   window.matchMedia('(pointer:coarse)').matches ||
-      //   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      // );
-    };
-    
-    // Only render the cursor if it's not a touch device
-    setShouldRender(!isTouchDevice());
+    setMounted(true);
   }, []);
 
-  if (!shouldRender) return null;
-  return <SmoothCursor />;
+  if (!mounted) return null;
+  
+  // Only render on non-touch devices
+  if (typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+    return <Cursor />;
+  }
+  
+  return null;
 }

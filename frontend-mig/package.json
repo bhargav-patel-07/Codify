@@ -11,6 +11,7 @@
   "dependencies": {
     "@heroui/react": "^2.8.1",
     "@nextui-org/react": "^2.4.9",
+    "@supabase/supabase-js": "^2.52.1",
     "@tabler/icons-react": "^3.34.1",
     "@types/styled-components": "^5.1.34",
     "class-variance-authority": "^0.7.1",

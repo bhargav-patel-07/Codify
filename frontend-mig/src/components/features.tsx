@@ -11,7 +11,6 @@ import {
   IconSignature,
   IconTableColumn,
 } from "@tabler/icons-react";
-import { GridSmallBackgroundDemo } from "./ui/background";
 
 const Skeleton = () => (
   <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-neutral-200 dark:from-neutral-900 dark:to-neutral-800 to-neutral-100"></div>
@@ -65,7 +64,7 @@ const featureItems = [
 export default function Features() {
   return (
     <div className="relative">
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="relative hover:bg-black-100 z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
         <BentoGrid className="max-w-7xl mx-auto">
           {featureItems.map((item, i) => (

@@ -22,8 +22,8 @@
     background-size: 24px 24px;
     background-attachment: fixed;
   }
-  /* Hide default cursor for all elements */
-  * {
+  /* Hide default cursor for all elements except our custom cursor */
+  *:not([class*="cursor"]) {
     cursor: none !important;
   }
   :root {

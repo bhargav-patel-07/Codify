@@ -18,21 +18,23 @@ import {
 import { useRef, useState } from "react";
 
 export const FloatingDock = ({
-  items,
-  desktopClassName,
-  mobileClassName,
-}: {
-  items: { title: string; icon: React.ReactNode; href: string }[];
-  desktopClassName?: string;
-  mobileClassName?: string;
-}) => {
-  return (
-    <>
-      <FloatingDockDesktop items={items} className={desktopClassName} />
-      <FloatingDockMobile items={items} className={mobileClassName} />
-    </>
-  );
-};
+    items,
+    desktopClassName,
+    mobileClassName,
+    position = "fixed", // add this
+  }: {
+    items: { title: string; icon: React.ReactNode; href: string }[];
+    desktopClassName?: string;
+    mobileClassName?: string;
+    position?: "fixed" | "static"; // add this
+  }) => {
+    return (
+      <>
+        <FloatingDockDesktop items={items} className={desktopClassName} position={position} />
+        <FloatingDockMobile items={items} className={mobileClassName} />
+      </>
+    );
+  };
 
 const FloatingDockMobile = ({
   items,
@@ -66,13 +68,18 @@ const FloatingDockMobile = ({
 const FloatingDockDesktop = ({
   items,
   className,
+  position = "fixed"
 }: {
   items: { title: string; icon: React.ReactNode; href: string }[];
   className?: string;
+  position?: "fixed" | "static";
 }) => {
-  let mouseX = useMotionValue(Infinity);
+  const mouseX = useMotionValue(Infinity);
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+    <div className={cn(
+      position === "fixed" ? "fixed bottom-4 left-1/2 -translate-x-1/2" : "static",
+      "z-50"
+    )}>
       <motion.div
         onMouseMove={(e) => mouseX.set(e.pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
@@ -100,41 +107,41 @@ function IconContainer({
   icon: React.ReactNode;
   href: string;
 }) {
-  let ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
-  let distance = useTransform(mouseX, (val) => {
-    let bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
+  const distance = useTransform(mouseX, (val) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
 
     return val - bounds.x - bounds.width / 2;
   });
 
-  let widthTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40]);
-  let heightTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40]);
+  const widthTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40]);
+  const heightTransform = useTransform(distance, [-150, 0, 150], [40, 80, 40]);
 
-  let widthTransformIcon = useTransform(distance, [-150, 0, 150], [20, 40, 20]);
-  let heightTransformIcon = useTransform(
+  const widthTransformIcon = useTransform(distance, [-150, 0, 150], [20, 40, 20]);
+  const heightTransformIcon = useTransform(
     distance,
     [-150, 0, 150],
     [20, 40, 20],
   );
 
-  let width = useSpring(widthTransform, {
+  const width = useSpring(widthTransform, {
     mass: 0.1,
     stiffness: 150,
     damping: 12,
   });
-  let height = useSpring(heightTransform, {
+  const height = useSpring(heightTransform, {
     mass: 0.1,
     stiffness: 150,
     damping: 12,
   });
 
-  let widthIcon = useSpring(widthTransformIcon, {
+  const widthIcon = useSpring(widthTransformIcon, {
     mass: 0.1,
     stiffness: 150,
     damping: 12,
   });
-  let heightIcon = useSpring(heightTransformIcon, {
+  const heightIcon = useSpring(heightTransformIcon, {
     mass: 0.1,
     stiffness: 150,
     damping: 12,

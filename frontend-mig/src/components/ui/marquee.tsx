@@ -1,6 +1,13 @@
 import { cn } from "@/lib/utils";
 import { ComponentPropsWithoutRef } from "react";
 
+export interface FeedbackItem {
+  id: string;
+  email?: string;
+  message: string;
+  created_at: string;
+}
+
 interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
   /**
    * Optional CSS class name to apply custom styles
@@ -17,9 +24,9 @@ interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
    */
   pauseOnHover?: boolean;
   /**
-   * Content to be displayed in the marquee
+   * Content to be displayed in the marquee (alternative to feedbackItems)
    */
-  children: React.ReactNode;
+  children?: React.ReactNode;
   /**
    * Whether to animate vertically instead of horizontally
    * @default false
@@ -30,6 +37,15 @@ interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
    * @default 4
    */
   repeat?: number;
+  /**
+   * Array of feedback items to display in the marquee
+   */
+  feedbackItems?: FeedbackItem[];
+  /**
+   * Maximum number of characters to show for each feedback message
+   * @default 100
+   */
+  maxMessageLength?: number;
 }
 
 export function Marquee({
@@ -39,8 +55,33 @@ export function Marquee({
   children,
   vertical = false,
   repeat = 4,
+  feedbackItems = [],
+  maxMessageLength = 100,
   ...props
 }: MarqueeProps) {
+  // Format feedback items if provided
+  const renderContent = () => {
+    if (feedbackItems && feedbackItems.length > 0) {
+      return feedbackItems.map((item) => (
+        <div 
+          key={item.id} 
+          className="flex flex-col bg-white/5 backdrop-blur-sm p-4 rounded-lg border border-white/10 min-w-[300px] mx-2"
+        >
+          <p className="text-sm text-gray-300 mb-2 line-clamp-3">
+            {item.message.length > maxMessageLength 
+              ? `${item.message.substring(0, maxMessageLength)}...` 
+              : item.message}
+          </p>
+          <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
+            <span>{item.email || 'Anonymous'}</span>
+            <span>{new Date(item.created_at).toLocaleDateString()}</span>
+          </div>
+        </div>
+      ));
+    }
+    return children;
+  };
+
   return (
     <div
       {...props}
@@ -65,7 +106,7 @@ export function Marquee({
               "[animation-direction:reverse]": reverse,
             })}
           >
-            {children}
+            {renderContent()}
           </div>
         ))}
     </div>
