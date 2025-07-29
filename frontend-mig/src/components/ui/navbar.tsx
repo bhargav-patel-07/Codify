@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X, Home, User, Settings, Coffee, TestTubeIcon, Code } from "lucide-react";
 import Image from 'next/image';
+import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 
 export const CodifyLogo = () => (
@@ -75,24 +76,41 @@ export function MobileNavbar() {
           </div>
         </div>
         
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {isMedium && (
-            <a
-              href="https://www.buymeacoffee.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden md:flex items-center gap-1 bg-yellow-100 text-yellow-900 px-2 py-1 text-xs rounded-md font-medium hover:bg-yellow-200 transition"
+            <button
+              onClick={async () => {
+                try {
+                  const { handleBuyCoffee } = await import('@/lib/razorpay');
+                  handleBuyCoffee();
+                } catch (error) {
+                  console.error('Error loading Razorpay:', error);
+                  alert('Failed to load payment service. Please try again.');
+                }
+              }}
+              className="hidden md:flex items-center gap-1 bg-yellow-100 text-yellow-900 px-3 py-1.5 text-sm rounded-md font-medium hover:bg-yellow-200 transition"
             >
-              <Coffee size={12} />
-              <span>Support</span>
-            </a>
+              <Coffee size={16} className="text-yellow-700" />
+              <span>Buy Me Coffee</span>
+            </button>
           )}
-          <a
-            href="/signup"
-            className="bg-blue-100 text-blue-700 px-4 py-2 text-sm rounded-md font-medium hover:bg-blue-200 transition whitespace-nowrap"
-          >
-            {isMedium ? 'Get Started' : 'Sign Up'}
-          </a>
+          <SignedOut>
+            <div className="flex items-center gap-2">
+              <SignInButton mode="modal">
+                <button className="text-sm px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                  Sign in
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button className="bg-blue-100 text-blue-700 px-4 py-2 text-sm rounded-md font-medium hover:bg-blue-200 transition whitespace-nowrap">
+                  {isMedium ? 'Get Started' : 'Sign up'}
+                </button>
+              </SignUpButton>
+            </div>
+          </SignedOut>
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
         </div>
       </div>
       {/* Mobile Menu */}
@@ -110,22 +128,43 @@ export function MobileNavbar() {
             </a>
           ))}
           <div className="mt-4 flex flex-col gap-2">
-            <a
-              href="/login"
-              className="w-full bg-blue-100 text-blue-700 px-4 py-2 rounded-md text-center font-medium hover:bg-blue-200 transition"
-              onClick={() => setIsMenuOpen(false)}
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button 
+                  className="w-full bg-blue-100 text-blue-700 px-4 py-2 rounded-md text-center font-medium hover:bg-blue-200 transition"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign in
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button 
+                  className="w-full bg-white border border-gray-200 text-gray-800 px-4 py-2 rounded-md text-center font-medium hover:bg-gray-50 transition"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Create account
+                </button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+            <button
+              onClick={async () => {
+                try {
+                  const { handleBuyCoffee } = await import('@/lib/razorpay');
+                  handleBuyCoffee();
+                  setIsMenuOpen(false);
+                } catch (error) {
+                  console.error('Error loading Razorpay:', error);
+                  alert('Failed to load payment service. Please try again.');
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-yellow-100 text-yellow-900 px-4 py-2.5 rounded-md hover:bg-yellow-200 transition font-medium"
             >
-              Login
-            </a>
-            <a
-              href="https://www.buymeacoffee.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 bg-yellow-100 text-yellow-900 px-4 py-2 rounded-md hover:bg-yellow-200 transition"
-            >
-              <Coffee size={18} />
-              Buy The Guy A Coffee
-            </a>
+              <Coffee size={18} className="text-yellow-700" />
+              Buy Me A Coffee (₹500)
+            </button>
           </div>
         </div>
       )}
@@ -168,28 +207,33 @@ export function DesktopNavbar() {
         </div>
 
         {/* Right Side Buttons */}
-        <div className="flex items-center gap-2">
-          <a
-            href="/login"
-            className="bg-blue-100 text-blue-700 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-blue-200 transition whitespace-nowrap"
-          >
-            Login
-          </a>
-          <a
-            href="/signup"
-            className="bg-blue-100 text-blue-700 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-blue-200 transition whitespace-nowrap"
-          >
-            Sign Up
-          </a>
-          <a
-            href="https://www.buymeacoffee.com/"
-            target="_blank"
-            rel="noopener noreferrer"
+        <div className="hidden md:flex items-center gap-4">
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="text-sm px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                Sign in
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button className="bg-blue-100 text-blue-700 px-4 py-2 text-sm rounded-md font-medium hover:bg-blue-200 transition">
+                Get Started
+              </button>
+            </SignUpButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+          <button
+            onClick={() => {
+              import('@/lib/razorpay').then(module => {
+                module.handleBuyCoffee();
+              });
+            }}
             className="hidden sm:flex items-center gap-1.5 bg-yellow-100 text-yellow-900 px-4 py-1.5 rounded-md text-sm font-medium hover:bg-yellow-200 transition whitespace-nowrap"
           >
             <Coffee size={16} />
             <span>Buy Me Coffee</span>
-          </a>
+          </button>
         </div>
       </div>
     </div>

@@ -1,146 +1,164 @@
 "use client";
-import React from "react";
-import { FloatingDock } from "@/components/ui/floating-dock";
-import { Marquee } from "@/components/ui/marquee";
-import { useState, useEffect } from 'react';
-import { User as IconUser } from "lucide-react";
-import { supabase, FeedbackItem } from "@/lib/supabase";
-import { 
-  IconBrandGithub, 
-  IconBrandX, 
-  IconBrandInstagram,
-  IconBrandLinkedin,
-  IconMessage,
-  IconX,
-  IconSend
-} from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { supabase, FeedbackItem } from '@/lib/supabase';
+import Dock from './ui/dock';
+import './ui/Dock.css';
+import { Mail, Github, Linkedin, Twitter, Instagram, User, MessageCircle, X } from 'lucide-react';
+import { GridBackground } from './ui/GridBackground';
+import { Marquee } from './ui/marquee';
 
-interface FloatingDockDemoProps {
+interface ContactProps {
   className?: string;
 }
 
-export function FloatingDockDemo({ className }: FloatingDockDemoProps) {
-  const [showFeedback, setShowFeedback] = useState(false);
+export default function ContactPage({ className }: ContactProps) {
+  // Dock items configuration
+  const dockItems = [
+    {
+      icon: <Mail className="w-6 h-6 text-white" />,
+      onClick: () => window.location.href = 'mailto:bhargavpatel0710@gmail.com'
+    },
+    {
+      icon: <Github className="w-6 h-6 text-white" />,
+      onClick: () => window.open('https://github.com/bhargav-patel-07', '_blank')
+    },
+    {
+      icon: <User className="w-6 h-6 text-white" />,
+      onClick: () => window.open('https://bhargavpatel.vercel.app', '_blank')
+    },
+    {
+      icon: <Linkedin className="w-6 h-6 text-white" />,
+      
+      onClick: () => window.open('https://linkedin.com/in/bhargavpatel0710', '_blank')
+    },
+    {
+      icon: <Twitter className="w-6 h-6 text-white" />,
+      onClick: () => window.open('https://x.com/Bhargav_0710', '_blank')
+    },
+    {
+      icon: <Instagram className="w-6 h-6 text-white" />,
+      onClick: () => window.open('https://instagram.com/yourusername', '_blank')
+    }
+  ];
+
+  // State for feedback popup and form
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     message: ''
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+  // Toggle popup and reset form
+  const togglePopup = () => {
+    setIsPopupOpen(!isPopupOpen);
+    if (!isPopupOpen) {
+      setFormData({ email: '', message: '' });
+      setError(null);
+      setSuccessMessage(null);
+    }
+  };
+
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.message.trim()) return;
     
-    console.log('Submitting feedback:', { email: formData.email, message: formData.message });
-    setIsSubmitting(true);
-    
+    // Basic validation
+    if (!formData.email || !formData.message) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
     try {
-      console.log('Sending to Supabase...');
-      const { data, error, status, statusText } = await supabase
+      setIsSubmitting(true);
+      setError(null);
+      
+      const { data, error } = await supabase
         .from('feedback')
-        .insert([{ 
-          email: formData.email.trim() || null, 
-          message: formData.message.trim() 
-        }])
+        .insert([
+          { 
+            email: formData.email, 
+            message: formData.message,
+            created_at: new Date().toISOString()
+          }
+        ])
         .select();
 
-      console.log('Supabase response:', { data, error, status, statusText });
-
       if (error) {
-        console.error('Supabase error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        throw error;
+        console.error('Supabase error details:', error);
+        throw new Error(error.message || 'Failed to submit feedback');
       }
-
-      if (!data || data.length === 0) {
-        throw new Error('No data returned from Supabase after insert');
-      }
-
-      console.log('Feedback submitted successfully:', data[0]);
-      setIsSubmitted(true);
-      setFormData({ email: '', message: '' });
       
-      // Refresh feedback list
-      console.log('Refreshing feedback list...');
-      const { data: newData, error: fetchError } = await supabase
-        .from('feedback')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (fetchError) {
-        console.error('Error refreshing feedback list:', fetchError);
+      // Update the feedback list with the new feedback
+      if (data && data[0]) {
+        setFeedbackList(prev => [data[0], ...prev]);
+        setSuccessMessage('Thank you for your feedback!');
+        setFormData({ email: '', message: '' });
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 3000);
       } else {
-        console.log('Fetched feedback items after submit:', newData?.length || 0);
-        setFeedbackList(newData || []);
+        throw new Error('No data returned from server');
       }
-      
-      setTimeout(() => {
-        setShowFeedback(false);
-        setIsSubmitted(false);
-      }, 3000);
     } catch (err) {
-      const error = err as Error & { details?: string; hint?: string; code?: string };
-      console.error('Error in handleSubmit:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-        stack: error.stack
-      });
-      setError(`Failed to submit feedback: ${error.message}`);
+      console.error('Error submitting feedback:', err);
+      setError('Failed to submit feedback. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  // Fetch feedback from Supabase
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (isPopupOpen && !target.closest('.feedback-popup')) {
+        setIsPopupOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isPopupOpen]);
+
+  // Fetch feedback on component mount
   useEffect(() => {
     const fetchFeedback = async () => {
       try {
-        console.log('Fetching feedback from Supabase...');
-        console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20) + '...');
-        
-        const { data, error, status } = await supabase
+        const { data, error } = await supabase
           .from('feedback')
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(20); // Limit to 20 most recent feedbacks
-
-        console.log('Supabase response:', { status, error, data });
-
-        if (error) {
-          console.error('Supabase query error:', error);
-          throw error;
-        }
-
-        if (!data) {
-          console.warn('No data returned from Supabase');
-          setFeedbackList([]);
-          return;
-        }
-
-        console.log('Fetched feedback items:', data.length);
-        setFeedbackList(data);
-        setError(null);
-      } catch (error) {
-        const err = error as Error & { status?: number; code?: string };
-        console.error('Error in fetchFeedback:', {
-          message: err.message,
-          name: err.name,
-          stack: err.stack,
-          status: err.status,
-          code: err.code
-        });
-        setError(`Failed to load feedback: ${err.message || 'Unknown error'}`);
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        if (data) setFeedbackList(data);
+      } catch (err) {
+        console.error('Error fetching feedback:', err);
+        setError('Failed to load feedback.');
       } finally {
         setIsLoading(false);
       }
@@ -149,295 +167,160 @@ export function FloatingDockDemo({ className }: FloatingDockDemoProps) {
     fetchFeedback();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-  const links = [
-   
-    {
-      title: "GitHub",
-      icon: (
-        <IconBrandGithub className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "https://github.com/bhargav-patel-07",
-    },
-    {
-      title: "LinkedIn",
-      icon: (
-        <IconBrandLinkedin className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "https://www.linkedin.com/in/bhargavpatel0710/#",
-    },
-    {
-      title: "Portfolio",
-      icon: (
-        <IconUser className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "https://bhargavpatel.vercel.app/",
-    }, 
-    {
-      title: "Twitter",
-      icon: (
-        <IconBrandX className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "https://x.com/Bhargav_0710",
-    },
-    {
-      title: "Instagram",
-      icon: (
-        <IconBrandInstagram className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "https://www.instagram.com/_.bhargavv__/",
-    },
-  ];
-
   return (
-    <div className="min-h-screen w-full">
-      {/* Main content area */}
-      <div className="container mx-auto px-4 py-10">
-        {/* Feedback Marquee Section */}
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">
-            What People Are Saying
-          </h2>
-          {isLoading ? (
-            <div className="text-center py-8">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">Loading feedback...</p>
+    <div className={cn("min-h-screen flex flex-col text-gray-900 dark:text-gray-100 overflow-hidden relative", className)}>
+      <div className="flex-1 overflow-y-auto">
+        <GridBackground className="h-full">
+          <div className="container mx-auto px-4 py-12">
+            <h1 className="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">
+              Contact Me
+            </h1>
+            
+            {/* Contact Information */}
+            <div className="max-w-4xl w-full mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-12">
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white">
+              Get In Touch
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Feel free to reach out to me through any of the social links below or check out what others have said!
+            </p>
+            
+            {/* Feedback Marquee */}
+            <div className="mt-8">
+              <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-4">
+                What People Are Saying
+              </h3>
+              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : error ? (
+                  <div className="text-red-500 text-center py-4">{error}</div>
+                ) : feedbackList.length > 0 ? (
+                  <Marquee 
+                    feedbackItems={feedbackList} 
+                    pauseOnHover={true}
+                    className="py-2"
+                  />
+                ) : (
+                  <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+                    No feedback yet. Be the first to leave a message!
+                  </p>
+                )}
+              </div>
             </div>
-          ) : error ? (
-            <div className="text-center py-4 text-red-500">{error}</div>
-          ) : feedbackList.length > 0 ? (
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-2">
-              <Marquee 
-                feedbackItems={feedbackList}
-                pauseOnHover={true}
-                className="py-6"
+          </div>
+          </div>
+        </GridBackground>
+      </div>
+
+      {/* Dock and Feedback Button - Fixed at bottom */}
+      <div className="w-full border-t border-gray-200/10 dark:border-gray-800/50 py-">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between w-full gap-4">
+            <div className="flex-1 overflow-x-auto pb-2 pr-5">
+              <Dock
+                items={dockItems}
+                className="bg-transparent"
+                panelHeight={60}
+                baseItemSize={42}
+                magnification={60}
               />
             </div>
-          ) : (
-            <p className="text-center text-gray-500 dark:text-gray-400">
-              No feedback yet. Be the first to share your thoughts!
-            </p>
-          )}
-        </section>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePopup();
+              }}
+              className="flex-shrink-0 px-4 py-4 text-sm opacity-50 hover:opacity-100 text-white rounded-full font-medium bg-gray-800 hover:bg-gray-600 transition-all duration-200 shadow-md whitespace-nowrap flex items-center justify-center relative z-10"
+              style={{ pointerEvents: 'auto' }}
+            >
+              <span className="hidden sm:inline">Feedback</span>
+              <MessageCircle className="w-4 h-4 sm:hidden" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Feedback Button and Popup - Desktop */}
-      <div className="hidden md:block fixed bottom-8 right-8 z-50">
-        {/* Feedback Popup */}
-        <div 
-          className={`fixed inset-0 bg-black/20 z-40 transition-opacity duration-300 ${showFeedback ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-          onClick={() => setShowFeedback(false)}
-        ></div>
-        
-        <div 
-          className={`fixed right-8 bottom-24 transition-all duration-300 transform ${showFeedback ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
-          style={{ zIndex: 50 }}
-        >
-          {showFeedback && (
-            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl p-6 w-[360px] border border-border" onClick={e => e.stopPropagation()}>
+      {/* Feedback Popup */}
+      <AnimatePresence>
+        {isPopupOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-24 right-4 left-4 sm:right-8 sm:left-auto w-auto max-w-md  border-1 rounded-xl z-50 feedback-popup"
+          >
+            <div className="p-4 max-h-[70vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Send us your feedback</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Leave Your Feedback
+                </h3>
                 <button 
-                  onClick={() => setShowFeedback(false)}
-                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                  aria-label="Close feedback form"
+                  onClick={togglePopup}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  aria-label="Close"
                 >
-                  <IconX className="h-5 w-5" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-              
-              {isSubmitted ? (
-                <div className="text-center py-6">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900 mb-4">
-                    <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">Thank You!</h4>
-                  <p className="text-gray-600 dark:text-gray-300">Your feedback has been submitted.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email (optional)
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      id="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                      placeholder="your@email.com"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Message *
-                    </label>
-                    <textarea
-                      name="message"
-                      id="message"
-                      rows={4}
-                      required
-                      value={formData.message}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                      placeholder="Your feedback..."
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? 'Sending...' : 'Send Feedback'}
-                  </button>
-                </form>
-              )}
-            </div>
-          )}
-        </div>
-        
-        {/* Desktop Feedback Button */}
-        <button
-          onClick={() => setShowFeedback(!showFeedback)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-          aria-label={showFeedback ? 'Close feedback form' : 'Open feedback form'}
-        >
-          <IconMessage className="h-5 w-5" />
-          <span>Feedback</span>
-        </button>
-      </div>
-      
-      {/* Mobile Feedback Button - Fixed at bottom */}
-      <div className="md:hidden fixed bottom-4 right-4 z-50">
-        <button
-          onClick={() => setShowFeedback(!showFeedback)}
-          className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all"
-          aria-label={showFeedback ? 'Close feedback form' : 'Open feedback form'}
-        >
-          <IconMessage className="h-6 w-6" />
-        </button>
-      </div>
-      
-      {/* Mobile Popup - Full Screen */}
-      {showFeedback && (
-        <div className="md:hidden fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4" onClick={() => setShowFeedback(false)}>
-          <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Send us your feedback</h3>
-                <button 
-                  onClick={() => setShowFeedback(false)}
-                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                  aria-label="Close feedback form"
-                >
-                  <IconX className="h-6 w-6" />
-                </button>
-              </div>
-              
-              {isSubmitted ? (
-                <div className="text-center py-8">
-                  <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-900 mb-4">
-                    <svg className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h4 className="text-xl font-medium text-gray-900 dark:text-white mb-2">Thank You!</h4>
-                  <p className="text-gray-600 dark:text-gray-300">Your feedback has been submitted.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="mobile-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email (optional)
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      id="mobile-email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-base"
-                      placeholder="your@email.com"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="mobile-message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Message *
-                    </label>
-                    <textarea
-                      name="message"
-                      id="mobile-message"
-                      rows={5}
-                      required
-                      value={formData.message}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-base"
-                      placeholder="Your feedback..."
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full flex justify-center py-3 px-6 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Sending...
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <IconSend className="mr-2 h-5 w-5" />
-                        Send Feedback
-                      </span>
-                    )}
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Floating Dock - Responsive positioning */}
-      <div className={cn("fixed bottom-0 left-0 right-0 z-50 flex justify-center p-4", className)}>
-        <div className="pointer-events-auto">
-          {/* Desktop View - Only show on md screens and up */}
-          <div className="hidden md:block">
-            <FloatingDock 
-              items={links}
-              position="fixed"
-              desktopClassName="mx-auto"
-              mobileClassName="hidden"
-            />
-          </div>
-          {/* Mobile View - Only show on screens smaller than md */}
-          <div className="md:hidden">
-            <FloatingDock 
-              items={links}
-              position="fixed"
-              desktopClassName="hidden"
-              mobileClassName="mx-auto"
-            />
-          </div>
-        </div>
-      </div>
+              {/* Feedback Form */}
+              <form onSubmit={handleSubmit}>
+                <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="your@email.com"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Message
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Your feedback..."
+                    required
+                  />
+                </div>
+                {error && (
+                  <div className="mb-4 text-red-500 text-sm">
+                    {error}
+                  </div>
+                )}
+                {successMessage && (
+                  <div className="mb-4 text-green-500 text-sm">
+                    {successMessage}
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                </button>
+              </form>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
-
-// Export the component as default
-export default FloatingDockDemo;
