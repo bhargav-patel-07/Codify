@@ -61,33 +61,38 @@ if (!supabaseAnonKey.startsWith('ey')) {
   throw new Error(errorMsg);
 }
 
-// Declare supabase at the module level with proper type
-let supabase: SupabaseClient<Database>;
-
-try {
-  supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: false,
-      detectSessionInUrl: false
-    }
-  });
-
-  // Test connection
-  supabase.from('feedback').select('*').limit(1)
-    .then(({ error }) => {
-      if (error) {
-        console.error('Supabase connection test failed:', error);
-      } else {
-        console.log('Supabase connected successfully');
+// Create a function to get the Supabase client with proper error handling
+const createSupabaseClient = () => {
+  try {
+    const client = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: false,
+        detectSessionInUrl: false
       }
     });
-} catch (error) {
-  console.error('Failed to initialize Supabase:', error);
-  throw error;
-}
 
-export { supabase };
+    // Test connection
+    client.from('feedback').select('*').limit(1)
+      .then(({ error }) => {
+        if (error) {
+          console.error('Supabase connection test failed:', error);
+        } else {
+          console.log('Supabase connected successfully');
+        }
+      });
+
+    return client;
+  } catch (error) {
+    console.error('Failed to initialize Supabase:', error);
+    throw new Error('Failed to initialize Supabase client');
+  }
+};
+
+// Initialize Supabase client
+const supabase = createSupabaseClient();
+
+export { supabase, createSupabaseClient };
 
 // Type for feedback data
 export interface FeedbackItem {

@@ -95,35 +95,48 @@ export default function ContactPage({ className }: ContactProps) {
       setIsSubmitting(true);
       setError(null);
       
+      console.log('Submitting feedback:', formData);
+      
+      // Get a fresh client instance to avoid any potential connection issues
       const { data, error } = await supabase
         .from('feedback')
         .insert([
           { 
-            email: formData.email, 
-            message: formData.message,
-            created_at: new Date().toISOString()
+            email: formData.email.trim() || null, // Store null if email is empty
+            message: formData.message.trim()
+            // created_at will be automatically set by the database
           }
         ])
-        .select();
+        .select('*')
+        .single(); // We expect a single record in response
 
       if (error) {
-        console.error('Supabase error details:', error);
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw new Error(error.message || 'Failed to submit feedback');
       }
       
-      // Update the feedback list with the new feedback
-      if (data && data[0]) {
-        setFeedbackList(prev => [data[0], ...prev]);
-        setSuccessMessage('Thank you for your feedback!');
-        setFormData({ email: '', message: '' });
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
-      } else {
+      if (!data) {
         throw new Error('No data returned from server');
       }
+      
+      // Update the feedback list with the new feedback
+      setFeedbackList(prev => [{
+        ...data,
+        created_at: new Date().toISOString() // Ensure consistent date format
+      }, ...prev]);
+      
+      setSuccessMessage('Thank you for your feedback! We appreciate it!');
+      setFormData({ email: '', message: '' });
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
     } catch (err) {
       console.error('Error submitting feedback:', err);
       setError('Failed to submit feedback. Please try again.');
@@ -132,7 +145,7 @@ export default function ContactPage({ className }: ContactProps) {
     }
   };
 
-  // Close popup when clicking outside
+  // Close popup when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -141,8 +154,32 @@ export default function ContactPage({ className }: ContactProps) {
       }
     };
 
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isPopupOpen) {
+        setIsPopupOpen(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isPopupOpen]);
+  
+  // Disable body scroll when popup is open
+  useEffect(() => {
+    if (isPopupOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
   }, [isPopupOpen]);
 
   // Fetch feedback on component mount
@@ -169,6 +206,106 @@ export default function ContactPage({ className }: ContactProps) {
 
   return (
     <div className={cn("min-h-screen flex flex-col text-gray-900 dark:text-gray-100 overflow-hidden relative", className)}>
+      {/* Feedback Form Popup */}
+      <AnimatePresence>
+        {isPopupOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md feedback-popup"
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Share Your Feedback
+                  </h3>
+                  <button
+                    onClick={togglePopup}
+                    className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                    aria-label="Close feedback form"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Email (optional)
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="your@email.com"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Your Feedback <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      placeholder="Share your thoughts..."
+                      rows={4}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+                    />
+                  </div>
+                  
+                  {error && (
+                    <div className="text-red-500 text-sm p-2 bg-red-50 dark:bg-red-900/20 rounded-md">
+                      {error}
+                    </div>
+                  )}
+                  
+                  {successMessage && (
+                    <div className="text-green-600 dark:text-green-400 text-sm p-2 bg-green-50 dark:bg-green-900/20 rounded-md">
+                      {successMessage}
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-end space-x-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={togglePopup}
+                      disabled={isSubmitting}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || !formData.message.trim()}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          Sending...
+                        </>
+                      ) : (
+                        'Send Feedback'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
       <div className="flex-1 overflow-y-auto">
         <GridBackground className="h-full">
           <div className="container mx-auto px-4 py-12">
@@ -176,41 +313,26 @@ export default function ContactPage({ className }: ContactProps) {
               Contact Me
             </h1>
             
-            {/* Contact Information */}
-            <div className="max-w-4xl w-full mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-12">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white">
-              Get In Touch
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Feel free to reach out to me through any of the social links below or check out what others have said!
-            </p>
-            
-            {/* Feedback Marquee */}
-            <div className="mt-8">
-              <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-4">
-                What People Are Saying
-              </h3>
-              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-                {isLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                  </div>
-                ) : error ? (
-                  <div className="text-red-500 text-center py-4">{error}</div>
-                ) : feedbackList.length > 0 ? (
-                  <Marquee 
-                    feedbackItems={feedbackList} 
-                    pauseOnHover={true}
-                    className="py-2"
-                  />
-                ) : (
-                  <p className="text-center py-4 text-gray-500 dark:text-gray-400">
-                    No feedback yet. Be the first to leave a message!
-                  </p>
-                )}
-              </div>
+            {/* Direct Marquee Rendering */}
+            <div className="py-8">
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : error ? (
+                <div className="text-red-500 text-center py-4">{error}</div>
+              ) : feedbackList.length > 0 ? (
+                <Marquee 
+                  feedbackItems={feedbackList} 
+                  pauseOnHover={true}
+                  className="py-2"
+                />
+              ) : (
+                <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  No feedback yet. Be the first to leave a message!
+                </p>
+              )}
             </div>
-          </div>
           </div>
         </GridBackground>
       </div>
