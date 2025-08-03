@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { ComponentPropsWithoutRef } from "react";
+import { supabase } from "@/lib/supabase";
 
 export interface FeedbackItem {
   id: string;
@@ -65,9 +66,9 @@ export function Marquee({
       return feedbackItems.map((item) => (
         <div 
           key={item.id} 
-          className="flex flex-col bg-white/5 backdrop-blur-sm p-4 rounded-lg border border-white/10 min-w-[300px] mx-2"
+          className="flex flex-col bg-black/5 backdrop-blur-sm p-4 rounded-lg border border-white/10 min-w-[300px] mx-2"
         >
-          <p className="text-sm text-gray-300 mb-2 line-clamp-3">
+          <p className="text-sm text-black mb-2 line-clamp-3">
             {item.message.length > maxMessageLength 
               ? `${item.message.substring(0, maxMessageLength)}...` 
               : item.message}
