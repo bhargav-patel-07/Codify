@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm install --legacy-peer-deps && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "vercel-build": "npm install --legacy-peer-deps && next build"
+    "postinstall": "next telemetry disable"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.27.1",
