@@ -6,8 +6,8 @@ const Switch = () => {
     <StyledWrapper>
       <label htmlFor="filter" className="switch" aria-label="Toggle Filter">
         <input type="checkbox" id="filter" />
-        <span>Generate Code</span>
-        <span>Test Code</span>
+        <span>LandingPage</span>
+        <span>Code Editor</span>
       </label>
     </StyledWrapper>
   );

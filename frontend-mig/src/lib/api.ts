@@ -1,5 +1,5 @@
 // Update with your actual backend URL
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = 'http://localhost:8000';
 
 // Helper function to handle API responses
 async function handleResponse(response: Response) {
@@ -23,14 +23,24 @@ async function handleResponse(response: Response) {
     return data;
   } catch (e) {
     // If JSON parsing fails, try to read as text
-    const text = await response.text();
-    console.error('[API Error - Non-JSON Response]', {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.url,
-      responseText: text
-    });
-    throw new Error(`Request failed with status ${response.status}: ${text}`);
+    try {
+      const text = await response.text();
+      console.error('[API Error - Non-JSON Response]', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        responseText: text
+      });
+      throw new Error(`Request failed with status ${response.status}: ${text}`);
+    } catch (textError) {
+      console.error('[API Error - Failed to read response]', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        error: textError
+      });
+      throw new Error(`Request failed with status ${response.status}: Failed to read response`);
+    }
   }
   console.log(`API Response - Status: ${response.status} ${response.statusText}`);
   
@@ -102,10 +112,14 @@ export interface CodeAnalysisResponse {
 export const api = {
   // Get supported programming languages
   async getLanguages(): Promise<string[]> {
-    const url = `${API_BASE_URL}/languages`;
+    const url = `${API_BASE_URL}/api/languages`;
     console.log(`[API] Fetching languages from: ${url}`);
     
     try {
+      // First check if we can even reach the server
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -114,26 +128,47 @@ export const api = {
         },
         mode: 'cors',
         credentials: 'include',
-        cache: 'no-cache'
+        cache: 'no-cache',
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       console.log('[API] Raw response:', response);
       const data = await handleResponse(response);
       console.log('[API] Languages received:', data);
-      return data;
-    } catch (error) {
+      
+      // Ensure we return an array of strings
+      if (Array.isArray(data)) {
+        return data.filter(item => typeof item === 'string');
+      }
+      
+      console.warn('[API] Expected array of languages but got:', data);
+      return [];
+    } catch (error: unknown) {
+      const errorObj = error as Error & { name: string; message: string; stack?: string };
+      const isNetworkError = errorObj.name === 'AbortError' || errorObj.message.includes('Failed to fetch');
+      
       console.error('[API] Error in getLanguages:', {
-        error,
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        name: errorObj.name,
+        message: errorObj.message,
+        stack: errorObj.stack,
+        isNetworkError
       });
+      
+      // If it's a network error or timeout, return default languages
+      if (isNetworkError) {
+        console.warn('[API] Using default languages due to network error');
+        return ['python', 'javascript', 'typescript', 'java', 'cpp', 'c', 'go', 'rust', 'php', 'ruby', 'swift', 'kotlin'];
+      }
+      
       throw error;
     }
   },
 
   // Create a new coding task
   async createTask(task: TaskRequest): Promise<TaskResponse> {
-    const response = await fetch(`${API_BASE_URL}/tasks`, {
+    const response = await fetch(`${API_BASE_URL}/api/tasks`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -151,7 +186,7 @@ export const api = {
 
   // Get task status
   async getTaskStatus(taskId: string): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`);
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch task status');
     }
@@ -160,7 +195,7 @@ export const api = {
 
   // Analyze code
   async analyzeCode(request: CodeAnalysisRequest): Promise<CodeAnalysisResponse> {
-    const response = await fetch(`${API_BASE_URL}/analyze`, {
+    const response = await fetch(`${API_BASE_URL}/api/analyze`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

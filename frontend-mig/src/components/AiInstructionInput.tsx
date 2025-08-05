@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { api } from '@/lib/api';
 import { Sparkles, Wand2 } from 'lucide-react';
+import { generateCodeWithGroq } from '@/lib/groq';
 
 interface AiInstructionInputProps {
   onCodeGenerated: (code: string) => void;
+  onClearEditor: () => void;
   language: string;
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
@@ -15,6 +16,7 @@ interface AiInstructionInputProps {
 
 export function AiInstructionInput({ 
   onCodeGenerated, 
+  onClearEditor,
   language,
   isLoading,
   setIsLoading 
@@ -32,44 +34,25 @@ export function AiInstructionInput({
     setError('');
 
     try {
-      // Create a task for the AI to generate code
-      const task = await api.createTask({
-        description: instruction,
-        language,
-        requirements: 'Generate code with detailed comments explaining the implementation.'
-      });
-
-      if (!task?.task_id) {
-        throw new Error('Failed to create AI generation task');
-      }
-
-      // Poll for task completion
-      let result;
-      let attempts = 0;
-      const maxAttempts = 10;
+      // Clear the editor first
+      onClearEditor();
       
-      while (attempts < maxAttempts) {
-        result = await api.getTaskStatus(task.task_id);
-        console.log('Task status:', result);
-        
-        if (result.status === 'completed') {
-          // Extract the generated code from the result
-          const generatedCode = result.result || result.code || '';
-          if (generatedCode) {
-            onCodeGenerated(generatedCode);
-            setInstruction('');
-            return;
-          }
-        } else if (result.status === 'failed') {
-          throw new Error(result.error || 'AI code generation failed');
-        }
-        
-        // Wait before polling again
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        attempts++;
-      }
+      // Generate code using Groq API with instruction to include comments
+      const prompt = `Generate a complete ${language} program that: ${instruction}\n` +
+                   `Requirements:\n` +
+                   `1. Include detailed comments explaining the code\n` +
+                   `2. Follow best practices for ${language}\n` +
+                   `3. Make sure the code is complete and runnable\n` +
+                   `4. Include example usage if applicable`;
       
-      throw new Error('AI generation timed out');
+      const generatedCode = await generateCodeWithGroq(prompt, language);
+      
+      if (generatedCode) {
+        onCodeGenerated(generatedCode);
+        setInstruction('');
+      } else {
+        throw new Error('No code was generated. Please try again with a different prompt.');
+      }
     } catch (error: any) {
       console.error('Error generating code:', error);
       setError(error.message || 'Failed to generate code. Please try again.');
