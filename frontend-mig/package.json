@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "next telemetry disable"
+    "postinstall": "next telemetry disable",
+    "vercel-build": "npm install next@15.4.3 && next build"
+  },
+  "engines": {
+    "node": ">=18.17.0"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.27.1",

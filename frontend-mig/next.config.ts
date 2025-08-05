@@ -4,6 +4,14 @@ const nextConfig: NextConfig = {
   // Enable React Strict Mode
   reactStrictMode: true,
   
+  // Enable static exports for Vercel
+  output: 'standalone',
+  
+  // Add any environment variables that should be available on the client side
+  env: {
+    NEXT_PUBLIC_GROQ_API_KEY: process.env.NEXT_PUBLIC_GROQ_API_KEY,
+  },
+  
   // Enable compiler optimizations
   compiler: {
     // Enable React Remove Properties in production
