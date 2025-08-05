@@ -8,6 +8,9 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 
+# Import the API router
+from backend.api.routes import router as api_router
+
 # Load environment variables
 load_dotenv()
 
@@ -25,6 +28,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include the API router
+app.include_router(api_router, prefix="/api")
 
 # Request/Response models
 class CodeRequest(BaseModel):
