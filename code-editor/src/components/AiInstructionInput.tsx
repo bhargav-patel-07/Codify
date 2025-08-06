@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import { Sparkles, Wand2 } from 'lucide-react';
 import { generateCodeWithGroq } from '@/lib/groq';
 
@@ -53,9 +54,11 @@ export function AiInstructionInput({
       } else {
         throw new Error('No code was generated. Please try again with a different prompt.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error generating code:', error);
-      setError(error.message || 'Failed to generate code. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate code';
+      toast.error(errorMessage);
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }

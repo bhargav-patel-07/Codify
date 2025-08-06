@@ -2,6 +2,7 @@
 
 import { SignUp, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect } from 'react';
 
 export default function SignUpPage() {
@@ -24,9 +25,9 @@ export default function SignUpPage() {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Already have an account?{' '}
-            <a href="/sign-in" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/sign-in" className="font-medium text-indigo-600 hover:text-indigo-500">
               Sign in
-            </a>
+            </Link>
           </p>
         </div>
         <div className="mt-8">

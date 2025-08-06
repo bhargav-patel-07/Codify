@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Editor from '@monaco-editor/react';
+import Editor, { OnMount } from '@monaco-editor/react';
 import { Button } from './ui/button';
 import { Play, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { SUPPORTED_LANGUAGES, DEFAULT_CODE_TEMPLATES } from '@/config/piston';
@@ -21,7 +21,7 @@ export default function CodeEditor() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [input, setInput] = useState('');
   const [languages, setLanguages] = useState<typeof SUPPORTED_LANGUAGES>([]);
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   
   // Initialize code with default template when language changes
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function CodeEditor() {
     }
   }, [language]);
 
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount: OnMount = (editor) => {
     editorRef.current = editor;
   };
 

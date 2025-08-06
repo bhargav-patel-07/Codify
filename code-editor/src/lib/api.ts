@@ -46,7 +46,7 @@ async function handleResponse(response: Response) {
   
   if (!response.ok) {
     let errorMessage = `Request failed with status ${response.status}`;
-    let errorDetails: any = {};
+    let errorDetails: Record<string, unknown> = {};
     
     try {
       const errorData = await response.json().catch(() => ({}));
@@ -185,12 +185,14 @@ export const api = {
   },
 
   // Get task status
-  async getTaskStatus(taskId: string): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch task status');
-    }
-    return response.json();
+  async getTaskStatus(taskId: string): Promise<TaskResponse> {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return handleResponse(response) as Promise<TaskResponse>;
   },
 
   // Analyze code

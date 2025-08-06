@@ -2,6 +2,7 @@
 
 import { SignIn, useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useEffect } from 'react';
 
 export default function SignInPage() {
@@ -24,9 +25,9 @@ export default function SignInPage() {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Or{' '}
-            <a href="/sign-up" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/sign-up" className="font-medium text-indigo-600 hover:text-indigo-500">
               create a new account
-            </a>
+            </Link>
           </p>
         </div>
         <div className="mt-8">

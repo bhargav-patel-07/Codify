@@ -32,7 +32,7 @@ interface RazorpayResponse {
 interface RazorpayInstance {
   open: () => void;
   close: () => void;
-  on: (event: string, callback: (response: any) => void) => void;
+  on: <T = unknown>(event: string, callback: (response: T) => void) => void;
 }
 
 export const loadRazorpay = (): Promise<boolean> => {
@@ -72,27 +72,27 @@ export const initiatePayment = async (amount: number, description: string): Prom
       throw new Error('Failed to create order');
     }
 
-    const order = await response.json();
+    const order: { id: string } = await response.json();
 
     // Open Razorpay checkout
-    const options = {
+    const options: RazorpayOptions = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
       amount: amount * 100, // Razorpay expects amount in paise
       currency: 'INR',
       name: 'Codify',
       description: description,
       order_id: order.id,
-      handler: function (response: any) {
+      handler: function (response: RazorpayResponse) {
         // Handle successful payment
         alert('Payment successful! Thank you for your support!');
       },
       prefill: {
         name: '',
         email: '',
-        contact: '',
+        contact: ''
       },
       theme: {
-        color: '#2563EB',
+        color: '#2563EB'
       },
     };
 
