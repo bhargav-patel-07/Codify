@@ -6,7 +6,7 @@ const Switch = () => {
     <StyledWrapper>
       <label htmlFor="filter" className="switch" aria-label="Toggle Filter">
         <input type="checkbox" id="filter" />
-        <span>LandingPage</span>
+        <span>HomePage</span>
         <span>Code Editor</span>
       </label>
     </StyledWrapper>

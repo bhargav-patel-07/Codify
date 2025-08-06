@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CursorWrapper from "@/components/CursorWrapper";
 import { ClerkProvider } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +32,6 @@ export default function RootLayout({
   return (
     <ClerkProvider
       appearance={{
-        baseTheme: dark,
         variables: { colorPrimary: "#0F172A" },
       }}
     >
