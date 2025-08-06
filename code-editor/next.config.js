@@ -32,4 +32,5 @@ const nextConfig = {
   },
 };
 
+// Use CommonJS export for better compatibility
 module.exports = nextConfig;
