@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CursorWrapper from "@/components/CursorWrapper";
 import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,9 +31,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        baseTheme: dark,
+        variables: { colorPrimary: "#0F172A" },
+      }}
+    >
       <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-        <body className="bg-background font-sans antialiased">
+        <body className="min-h-screen bg-background font-sans antialiased">
           <CursorWrapper />
           {children}
         </body>

@@ -1,8 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Finlandica:ital,wght@0,400..700;1,400..700&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tailwindcss/utilities";
 
 :root {
   --grid-color: rgba(0, 0, 0, 0.05);
@@ -151,34 +150,36 @@
   transform: translate(-50%, -50%);
 }
 
-/*marquee*/
-@theme inline {
+/* Marquee animations */
+:root {
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
- 
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(calc(-100% - var(--gap)));
-    }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
   }
-  @keyframes marquee-vertical {
-    from {
-      transform: translateY(0);
-    }
-    to {
-      transform: translateY(calc(-100% - var(--gap)));
-    }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+@keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
   }
-  body {
-    @apply bg-background text-foreground;
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
   }
+}
+
+/* Base styles */
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
