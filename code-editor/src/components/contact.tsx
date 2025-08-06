@@ -259,16 +259,16 @@ export default function ContactPage({ className }: ContactProps) {
       )}
 
       {/* Social Media Links */}
-      <div className="py-12 bg-gradient-to-b from-transparent to-gray-50 dark:to-gray-900/50">
+      <div className="py-12 bg-gradient-to-b from-transparent to-gray-50">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Connect with me</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-6">Connect with me</h3>
             <div className="flex flex-nowrap justify-center items-center gap-3 sm:gap-4 overflow-x-auto w-full py-2 px-1 hide-scrollbar">
               <a 
                 href="https://github.com/bhargav-patel-07" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex-shrink-0 text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors"
+                className="flex-shrink-0 text-gray-700 hover:text-gray-900 transition-colors"
                 aria-label="GitHub"
               >
                 <IconBrandGithub className="w-8 h-8 sm:w-12 sm:h-12" />
@@ -295,7 +295,7 @@ export default function ContactPage({ className }: ContactProps) {
                 href="https://www.linkedin.com/in/bhargavpatel0710/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex-shrink-0 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                className="flex-shrink-0 text-blue-600 hover:text-blue-700 transition-colors"
                 aria-label="LinkedIn"
               >
                 <IconBrandLinkedin className="w-8 h-8 sm:w-12 sm:h-12" />
@@ -318,7 +318,7 @@ export default function ContactPage({ className }: ContactProps) {
               </a>
 
             </div>
-            <p className="mt-6 text-gray-600 dark:text-gray-400">
+            <p className="mt-6 text-gray-600">
               Let's build something amazing together!
             </p>
           </div>

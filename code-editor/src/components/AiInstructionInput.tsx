@@ -74,7 +74,7 @@ export function AiInstructionInput({
           placeholder={`Ask AI to generate code (e.g., "Create a ${language} function to sort an array")`}
           value={instruction}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInstruction(e.target.value)}
-          className="min-h-[50px] pl-10 pr-24 py-2 text-sm bg-transparent border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+          className="min-h-[50px] pl-10 pr-24 py-2 text-sm bg-transparent border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
           disabled={isLoading}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -108,7 +108,7 @@ export function AiInstructionInput({
       </div>
       
       {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-start gap-2">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-start gap-2">
           <svg className="h-4 w-4 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>

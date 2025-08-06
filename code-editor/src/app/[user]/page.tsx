@@ -67,7 +67,7 @@ export default function UserPage({ params }: { params: Promise<{ user: string }>
 
   return (
     <div 
-      className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950"
+      className="flex flex-col min-h-screen bg-gray-50"
       style={{
         backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px)',
         backgroundSize: '24px 24px',

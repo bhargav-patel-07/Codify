@@ -11,12 +11,12 @@ const Homepage = () => {
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="w-full max-w-7xl mx-auto">
           <div className="text-center space-y-4 sm:space-y-6">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900">
               Create & Test Your Code
-              <span className="text-indigo-600 dark:text-indigo-400 block mt-1 sm:mt-2">Absolutely Free</span>
+              <span className="text-indigo-600 block mt-1 sm:mt-2">Absolutely Free</span>
             </h1>
             
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 px-2 sm:px-0">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 px-2 sm:px-0">
               Accelerate your development workflow with our intelligent code generation and live preview features.
               <span className="block sm:inline"> Focus on what matters most - building great products.</span>
             </p>

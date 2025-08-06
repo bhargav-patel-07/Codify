@@ -268,7 +268,7 @@ export default function CodeEditor() {
             id="language-select"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="w-full text-sm rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-800"
+            className="w-full text-sm rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
           >
             {languages.map((lang) => (
               <option key={lang.value} value={lang.value}>
@@ -300,10 +300,10 @@ export default function CodeEditor() {
       <div className="flex-1 flex flex-col md:flex-row gap-4 h-[calc(100vh-200px)] min-h-[600px]">
         {/* Left Column - Editor */}
         <div className="flex-1 flex flex-col border rounded-lg overflow-hidden">
-          <div className="p-2 text-sm font-medium border-b bg-gray-50 dark:bg-gray-800">
+          <div className="p-2 text-sm font-medium border-b bg-gray-50">
             Editor
           </div>
-          <div className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
+          <div className="flex-1 overflow-hidden bg-white">
             <Editor
               height="100%"
               defaultLanguage={language}
@@ -323,10 +323,10 @@ export default function CodeEditor() {
         
         {/* Right Column - Output */}
         <div className="flex-1 flex flex-col border rounded-lg overflow-hidden">
-          <div className="p-2 text-sm font-medium border-b bg-gray-50 dark:bg-gray-800">
+          <div className="p-2 text-sm font-medium border-b bg-gray-50">
             Output
           </div>
-          <div className="flex-1 p-4 overflow-auto bg-white dark:bg-gray-900">
+          <div className="flex-1 p-4 overflow-auto bg-white">
             <div 
               ref={outputRef}
               className="font-mono text-sm whitespace-pre-wrap break-words"
@@ -362,13 +362,13 @@ export default function CodeEditor() {
 
         {/* Stdin Input */}
         <div className="border rounded-lg overflow-hidden">
-          <div className="p-2 text-sm font-medium border-b bg-gray-50 dark:bg-gray-800">
+          <div className="p-2 text-sm font-medium border-b bg-gray-50">
             Input (stdin)
           </div>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            className="w-full p-3 font-mono text-sm bg-white dark:bg-gray-900 focus:outline-none resize-none min-h-[120px]"
+            className="w-full p-3 font-mono text-sm bg-white focus:outline-none resize-none min-h-[120px]"
             placeholder="Enter input here..."
           />
         </div>

@@ -60,13 +60,13 @@ export function MobileNavbar() {
   ];
 
   return (
-    <nav className="block lg:hidden fixed top-0 left-0 right-0 z-50 w-full bg-white/80 dark:bg-black/80 border-b border-gray-200 dark:border-gray-800 backdrop-blur-sm">
+    <nav className="block lg:hidden fixed top-0 left-0 right-0 z-50 w-full bg-white border-b border-gray-200">
       <div className={`flex items-center justify-between ${isMedium ? 'px-4' : 'px-3'} h-14`}>
         <div className="flex items-center gap-2">
           <button
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-1.5 rounded-md focus:outline-none"
+            className="p-1.5 rounded-md focus:outline-none text-gray-900"
           >
             {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -97,7 +97,7 @@ export function MobileNavbar() {
           <SignedOut>
             <div className="flex items-center gap-2">
               <SignInButton mode="modal">
-                <button className="text-sm px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                <button className="text-sm px-3 py-1.5 rounded-md hover:bg-gray-100 transition">
                   Sign in
                 </button>
               </SignInButton>
@@ -115,12 +115,12 @@ export function MobileNavbar() {
       </div>
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 px-4 py-2">
+        <div className="bg-white border-t border-gray-200 px-4 py-2">
           {menuItems.map((item) => (
             <a
               key={item.name}
               href={item.href}
-              className="flex items-center gap-2 py-2 text-gray-800 dark:text-gray-200 hover:text-primary"
+              className="flex items-center gap-2 py-2 text-gray-800 hover:text-primary"
               onClick={() => setIsMenuOpen(false)}
             >
               {item.icon}
@@ -174,7 +174,7 @@ export function MobileNavbar() {
 
 export function DesktopNavbar() {
   return (
-    <div className="w-full relative bg-[url('/grid-bg.svg')] bg-repeat px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+    <div className="w-full relative bg-[url('/grid-bg.svg')] bg-repeat px-4 py-3 border-b border-gray-200">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-2">
@@ -182,24 +182,24 @@ export function DesktopNavbar() {
         </div>
 
         {/* Navigation Links */}
-        <div className="hidden md:flex items-center gap-1 bg-white/80 dark:bg-black/80 rounded-full px-3 py-1.5 border border-gray-200 dark:border-gray-700">
+        <div className="hidden md:flex items-center gap-1 bg-white/80 rounded-full px-3 py-1.5 border border-gray-200">
           <a
             href="#"
-            className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition whitespace-nowrap"
+            className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full hover:bg-gray-100 transition whitespace-nowrap"
           >
             <Home size={16} />
             <span>Home</span>
           </a>
           <a
             href="#features"
-            className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition whitespace-nowrap"
+            className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full hover:bg-gray-100 transition whitespace-nowrap"
           >
             <Settings size={16} />
             <span>Features</span>
           </a>
           <a
             href="#contact"
-            className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition whitespace-nowrap"
+            className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full hover:bg-gray-100 transition whitespace-nowrap"
           >
             <User size={16} />
             <span>Contact</span>
@@ -210,7 +210,7 @@ export function DesktopNavbar() {
         <div className="hidden md:flex items-center gap-4">
           <SignedOut>
             <SignInButton mode="modal">
-              <button className="text-sm px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+              <button className="text-sm px-3 py-1.5 rounded-md hover:bg-gray-100 transition">
                 Sign in
               </button>
             </SignInButton>
