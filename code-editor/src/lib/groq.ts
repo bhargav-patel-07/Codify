@@ -11,56 +11,100 @@ export interface GroqMessage {
   content: string;
 }
 
-export async function generateCodeWithGroq(instruction: string, language: string): Promise<string> {
+export async function generateCodeWithGroq(instruction: string, language: string | undefined): Promise<string> {
   if (!GROQ_API_KEY) {
     throw new Error('Groq API key is not configured');
   }
 
-  const langConfig = SUPPORTED_LANGUAGES.find(lang => lang.value === language);
+  // Default to python if language is not provided or not found in supported languages
+  const defaultLanguage = 'python';
+  const langToUse = language || defaultLanguage;
+  
+  const langConfig = SUPPORTED_LANGUAGES.find(lang => lang.value === langToUse);
   if (!langConfig) {
-    throw new Error(`Unsupported language: ${language}`);
+    console.warn(`Language '${langToUse}' not found in supported languages, defaulting to '${defaultLanguage}'`);
+    // Fall back to python if the provided language is not supported
+    return generateCodeWithGroq(instruction, defaultLanguage);
   }
 
   const messages: GroqMessage[] = [
     {
       role: 'system',
       content: `You are a helpful coding assistant that generates clean, efficient, and well-commented code. 
-      Always respond with just the code, no additional explanations or markdown code blocks.`
+      Respond with just the code, no additional explanations or markdown code blocks.`
     },
     {
       role: 'user',
-      content: `Write a ${language} program that: ${instruction}\n\n` +
+      content: `Write a ${langToUse} program that: ${instruction}\n\n` +
         `Requirements:\n` +
         `1. Include detailed comments explaining the code\n` +
-        `2. Follow best practices for ${language}\n` +
-        `3. Make sure the code is complete and runnable`
+        `2. Follow best practices for ${langToUse}\n` +
+        `3. Make sure the code is complete and runnable\n` +
+        `4. Do not include any markdown code blocks or backticks`
     }
   ];
 
-  try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'mixtral-8x7b-32768',
-        messages,
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    });
+  console.log('Sending request to Groq API with messages:', JSON.stringify(messages, null, 2));
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Groq API error: ${response.status} - ${error}`);
+  const maxRetries = 3;
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt} to call Groq API...`);
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama3-70b-8192',
+          messages,
+          temperature: 0.7,
+          max_tokens: 2000
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Groq API error:', errorText);
+        
+        // If it's a rate limit or server error, wait and retry
+        if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
+          console.log(`Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+        
+        throw new Error(`Groq API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Received response from Groq API:', JSON.stringify(data, null, 2));
+      
+      let generatedCode = data.choices[0]?.message?.content?.trim() || '';
+      
+      // Remove any markdown code blocks if present
+      generatedCode = generatedCode.replace(/^```(?:\w+)?\n([\s\S]*?)\n```/g, '$1');
+      
+      console.log('Processed generated code:', generatedCode);
+      return generatedCode;
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`Attempt ${attempt} failed:`, error);
+      
+      // If it's not the last attempt, wait before retrying
+      if (attempt < maxRetries) {
+        const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
     }
-
-    const data = await response.json();
-    return data.choices[0]?.message?.content?.trim() || '';
-  } catch (error) {
-    console.error('Error calling Groq API:', error);
-    throw new Error('Failed to generate code. Please try again later.');
   }
+  
+  // If we get here, all attempts failed
+  console.error('All attempts to call Groq API failed');
+  throw lastError || new Error('Failed to generate code after multiple attempts');
 }

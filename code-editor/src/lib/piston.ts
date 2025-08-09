@@ -178,7 +178,7 @@ export async function getRuntimes(): Promise<Array<{
 /**
  * Get file extension for a programming language
  */
-function getFileExtension(language: string): string {
+export function getFileExtension(language: string): string {
   const extensions: Record<string, string> = {
     python: 'py',
     javascript: 'js',

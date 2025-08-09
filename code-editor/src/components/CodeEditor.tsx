@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { Button } from './ui/button';
+import { getFileExtension } from '@/lib/piston';
 import { Play, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { SUPPORTED_LANGUAGES, DEFAULT_CODE_TEMPLATES } from '@/config/piston';
 import { executeCode, getRuntimes } from '@/lib/piston';
@@ -11,29 +12,129 @@ import { AiInstructionInput } from './AiInstructionInput';
 // Use the languages from our config
 const supportedLanguages = SUPPORTED_LANGUAGES;
 
-export default function CodeEditor() {
-  const [language, setLanguage] = useState('python');
-  const [code, setCode] = useState('');
-  const [output, setOutput] = useState('Run code to see output here');
+interface CodeEditorProps {
+  code: string;
+  onCodeChange?: (code: string) => void; // Made optional
+  language: string;
+  onLanguageChange?: (language: string) => void;
+  onClearEditor?: () => void;
+  // Internal state for when onLanguageChange is not provided
+  _setLanguage?: (language: string) => void; // Internal use only
+}
+
+interface LanguageOption {
+  value: string;
+  label: string;
+  runtime?: string;
+  version: string;
+}
+
+export default function CodeEditor({
+  code,
+  onCodeChange,
+  language,
+  onLanguageChange,
+  onClearEditor,
+}: CodeEditorProps): React.ReactNode {
+  // Internal state for managing language when onLanguageChange is not provided
+  const [internalLanguage, setInternalLanguage] = useState(language);
+  
+  // Use the provided onLanguageChange or fall back to internal state
+  const handleLanguageChange = (newLanguage: string) => {
+    if (onLanguageChange) {
+      onLanguageChange(newLanguage);
+    } else {
+      setInternalLanguage(newLanguage);
+    }
+  };
+  
+  // Handle language change
+  const handleLanguageSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLanguage = e.target.value;
+    handleLanguageChange(newLanguage);
+  };
+
+  // Determine which language to use based on props and internal state
+  const currentLanguage = onLanguageChange ? language : internalLanguage;
+  const [output, setOutput] = useState<string>('Run code to see output here');
   const outputRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [input, setInput] = useState('');
-  const [languages, setLanguages] = useState<typeof SUPPORTED_LANGUAGES>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [input, setInput] = useState<string>('');
+  const [languages, setLanguages] = useState<LanguageOption[]>([]);
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   
-  // Initialize code with default template when language changes
+  // Initialize with default template if code is empty
   useEffect(() => {
-    if (language && DEFAULT_CODE_TEMPLATES[language]) {
-      setCode(DEFAULT_CODE_TEMPLATES[language]);
+    console.log('CodeEditor mounted or language changed. Language:', language, 'Current code length:', code?.length || 0);
+    
+    // Only set default template if code is empty or not provided
+    if (language && 
+        DEFAULT_CODE_TEMPLATES[language as keyof typeof DEFAULT_CODE_TEMPLATES] && 
+        (!code || code.trim() === '') && 
+        onCodeChange) {
+      const defaultCode = DEFAULT_CODE_TEMPLATES[language as keyof typeof DEFAULT_CODE_TEMPLATES] || '';
+      console.log('Setting default code for language:', language);
+      onCodeChange(defaultCode);
     }
-  }, [language]);
+  }, [language]); // Removed code and onCodeChange from dependencies to prevent loops
+  
+  // Fetch available languages from Piston API
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const runtimes = await getRuntimes();
+        if (runtimes && runtimes.length > 0) {
+          // Create a map to ensure unique languages
+          const langMap = new Map();
+          
+          runtimes.forEach(runtime => {
+            if (SUPPORTED_LANGUAGES.some(sl => sl.value === runtime.language)) {
+              const langKey = runtime.language.toLowerCase();
+              if (!langMap.has(langKey)) {
+                langMap.set(langKey, {
+                  value: runtime.language,
+                  label: runtime.language.charAt(0).toUpperCase() + runtime.language.slice(1),
+                  runtime: runtime.runtime || runtime.language,
+                  version: runtime.version,
+                });
+              }
+            }
+          });
+          
+          const availableLangs = Array.from(langMap.values());
+          
+          setLanguages(availableLangs);
+          
+          // Set default language if not set
+          if (availableLangs.length > 0 && !language) {
+            if (onLanguageChange) {
+              onLanguageChange(availableLangs[0].value);
+            } else {
+              // If onLanguageChange is not provided, use the internal state
+              setInternalLanguage(availableLangs[0].value);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching languages:', error);
+        setLanguages(SUPPORTED_LANGUAGES as LanguageOption[]);
+      }
+    };
+    
+    fetchLanguages();
+  }, [language, onLanguageChange]);
 
   const handleClearEditor = () => {
-    setCode('');
-    setOutput('Run code to see output here');
+    if (onCodeChange) {
+      onCodeChange('');
+    }
     setInput('');
+    // Call the prop if it exists
+    if (onClearEditor) {
+      onClearEditor();
+    }
     // Focus the editor after clearing
     if (editorRef.current) {
       editorRef.current.focus();
@@ -41,14 +142,21 @@ export default function CodeEditor() {
   };
 
   const handleCodeGenerated = (generatedCode: string) => {
-    setCode(generatedCode);
+    if (onCodeChange) {
+      onCodeChange(generatedCode);
+    }
     // Focus the editor after code is generated
     if (editorRef.current) {
       editorRef.current.focus();
     }
   };
 
-  
+  const handleEditorChange = (value: string | undefined) => {
+    if (onCodeChange) {
+      onCodeChange(value || '');
+    }
+  };
+
   // Fetch supported languages on component mount
   useEffect(() => {
     const fetchAvailableLanguages = async () => {
@@ -66,19 +174,21 @@ export default function CodeEditor() {
           setLanguages(availableLangs);
           
           // If current language is not available, switch to the first available one
-          if (!availableLangs.some(lang => lang.value === language)) {
-            setLanguage(availableLangs[0].value);
-            setCode(DEFAULT_CODE_TEMPLATES[availableLangs[0].value] || '');
+          if (!availableLangs.some(lang => lang.value === currentLanguage)) {
+            const newLanguage = availableLangs[0].value;
+            handleLanguageChange(newLanguage);
+            onCodeChange?.(DEFAULT_CODE_TEMPLATES[newLanguage] || '');
           }
         } else {
           console.warn('[CodeEditor] No supported languages found in available runtimes, using all supported languages');
           setLanguages(supportedLanguages);
         }
-      } catch (error) {
-        const errorObj = error as Error;
+      } catch (error: unknown) {
+        const errorObj = error as Error & { name?: string; code?: string };
         console.error('[CodeEditor] Failed to fetch runtimes:', {
           name: errorObj.name,
           message: errorObj.message,
+          code: errorObj.code,
           stack: errorObj.stack
         });
         
@@ -89,92 +199,120 @@ export default function CodeEditor() {
     };
     
     fetchAvailableLanguages();
-  }, []);
+  }, [language, onLanguageChange, onCodeChange]);
 
   // Initialize code with default template when language changes
   useEffect(() => {
-    if (language && DEFAULT_CODE_TEMPLATES[language as keyof typeof DEFAULT_CODE_TEMPLATES]) {
-      setCode(DEFAULT_CODE_TEMPLATES[language as keyof typeof DEFAULT_CODE_TEMPLATES] || '');
+    const lang = onLanguageChange ? language : internalLanguage;
+    if (lang && 
+        DEFAULT_CODE_TEMPLATES[lang as keyof typeof DEFAULT_CODE_TEMPLATES] && 
+        onCodeChange) {
+      onCodeChange(DEFAULT_CODE_TEMPLATES[lang as keyof typeof DEFAULT_CODE_TEMPLATES] || '');
     }
+  }, [language, internalLanguage, onLanguageChange, onCodeChange]);
+
+  // Update internal language when language prop changes
+  useEffect(() => {
+    setInternalLanguage(language);
   }, [language]);
 
   const handleEditorDidMount: OnMount = (editor) => {
+    console.log('Editor mounted, setting initial code');
     editorRef.current = editor;
+    
+    // Set the initial value
+    if (code) {
+      console.log('Setting initial code in editor');
+      editor.setValue(code);
+    }
   };
+
+  // Update editor content when code prop changes
+  useEffect(() => {
+    if (editorRef.current && code !== undefined) {
+      console.log('Code prop changed, updating editor');
+      const editor = editorRef.current;
+      const model = editor.getModel();
+      if (model) {
+        // Only update if the content is actually different
+        const currentValue = model.getValue();
+        if (currentValue !== code) {
+          console.log('Updating editor content');
+          editor.setValue(code);
+          // Move cursor to the beginning
+          editor.setPosition({ lineNumber: 1, column: 1 });
+        }
+      }
+    }
+  }, [code]);
 
   // Auto-scroll output to bottom when it updates
   useEffect(() => {
-    console.log('Output updated:', output);
     if (outputRef.current) {
-      console.log('Scrolling output to bottom');
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }
   }, [output]);
 
   const handleRunCode = async () => {
+    if (!code.trim()) {
+      setOutput('Error: No code to execute');
+      return;
+    }
+
     setIsLoading(true);
-    setOutput('Running...');
-    console.log('Running code with language:', language);
+    setOutput('Executing code...');
 
     try {
+      const runtime = languages.find(l => l.value === language)?.runtime || language;
       const result = await executeCode({
-        code,
-        language,
-        stdin: input
+        language: runtime,
+        version: '*',
+        code: code,
+        stdin: input,
+        args: []
       });
+
+      // Process the execution result
+      const outputLines: string[] = [];
       
-      console.log('Piston API Response:', JSON.stringify(result, null, 2));
-      
-      const output = [];
-      
-      // Debug: Log the raw output
-      if (result.run?.output) {
-        console.log('Raw output:', result.run.output);
-        console.log('Output type:', typeof result.run.output);
-        console.log('Output length:', result.run.output.length);
-      }
-      
-      // Handle compilation output if present
-      if (result.compile && result.compile.stderr) {
-        output.push('❌ Compilation Error');
-        output.push(result.compile.stderr);
-      } 
-      
-      // Handle runtime output
-      if (result.run) {
-        if (result.run.stderr) {
-          output.push('❌ Runtime Error');
-          output.push(result.run.stderr);
-        } else {
-          output.push('✅ Execution Successful');
+      if (result) {
+        if (result.compile && result.compile.output) {
+          outputLines.push('Compilation Output:');
+          outputLines.push(result.compile.output);
+        }
+
+        if (result.run) {
+          outputLines.push('Execution Output:');
           if (result.run.output) {
             // Clean up the output by removing any undefined or null values
             const cleanOutput = result.run.output
               .split('\n')
-              .filter(line => line && line.trim() !== 'undefined')
+              .filter((line: string) => line && line.trim() !== 'undefined')
               .join('\n');
             
             if (cleanOutput) {
-              output.push(cleanOutput);
+              outputLines.push(cleanOutput);
             } else {
-              output.push('(No output to display)');
+              outputLines.push('(No output to display)');
             }
           } else {
-            output.push('(No output)');
+            outputLines.push('(No output)');
+          }
+          
+          if (result.run.signal) {
+            outputLines.push(`\nProcess was terminated by signal: ${result.run.signal}`);
+          }
+          
+          // Only show exit code if it's non-zero
+          if (result.run.code !== 0) {
+            outputLines.push(`Exit Code: ${result.run.code}`);
           }
         }
         
-        if (result.run.signal) {
-          output.push(`\nProcess was terminated by signal: ${result.run.signal}`);
-        }
-        
-        // Only show exit code if it's non-zero
-        if (result.run.code !== 0) {
-          output.push(`Exit Code: ${result.run.code}`);
-        }
+        setOutput(outputLines.join('\n\n'));
+      } else {
+        setOutput('No execution result returned');
       }
-      
-      setOutput(output.join('\n'));
     } catch (error: unknown) {
       const errorObj = error as Error & { name?: string; code?: string };
       console.error('Error in handleRunCode:', {
@@ -267,8 +405,8 @@ export default function CodeEditor() {
           <select
             id="language-select"
             value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="w-full text-sm rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            onChange={(e) => onLanguageChange?.(e.target.value)}
+            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           >
             {languages.map((lang) => (
               <option key={lang.value} value={lang.value}>
@@ -289,7 +427,7 @@ export default function CodeEditor() {
           <Button 
             onClick={handleRunCode} 
             disabled={isLoading || isAnalyzing}
-            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium"
+            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium !bg-black !text-white hover:!bg-gray-800"
           >
             {isLoading ? 'Running...' : 'Run Code'}
           </Button>
@@ -309,14 +447,17 @@ export default function CodeEditor() {
               defaultLanguage={language}
               language={language}
               value={code}
-              onChange={(value) => setCode(value || '')}
+              onChange={handleEditorChange}
               onMount={handleEditorDidMount}
+              theme="vs-dark"
               options={{
-                minimap: { enabled: true },
+                minimap: { enabled: false },
                 fontSize: 14,
                 wordWrap: 'on',
                 automaticLayout: true,
+                tabSize: 2,
               }}
+              key={language} // Force re-render on language change
             />
           </div>
         </div>

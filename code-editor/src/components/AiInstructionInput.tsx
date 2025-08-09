@@ -35,22 +35,41 @@ export function AiInstructionInput({
     setError('');
 
     try {
-      // Clear the editor first
+      console.log('Clearing editor...');
       onClearEditor();
       
+      // Give a small delay to ensure the editor is cleared
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Log the language being used for debugging
+      console.log('Current language:', language);
+      
       // Generate code using Groq API with instruction to include comments
-      const prompt = `Generate a complete ${language} program that: ${instruction}\n` +
+      const prompt = `Generate a complete ${language || 'Python'} program that: ${instruction}\n` +
                    `Requirements:\n` +
                    `1. Include detailed comments explaining the code\n` +
-                   `2. Follow best practices for ${language}\n` +
+                   `2. Follow best practices for ${language || 'Python'}\n` +
                    `3. Make sure the code is complete and runnable\n` +
-                   `4. Include example usage if applicable`;
+                   `4. Include example usage if applicable\n` +
+                   `5. Do not include any markdown code blocks or backticks`;
       
-      const generatedCode = await generateCodeWithGroq(prompt, language);
+      console.log('Sending request to Groq API with prompt:', prompt);
+      let generatedCode = await generateCodeWithGroq(prompt, language || 'python');
       
       if (generatedCode) {
+        // Ensure we don't have any markdown code blocks
+        generatedCode = generatedCode.replace(/^```(?:\w+)?\n([\s\S]*?)\n```/g, '$1');
+        
+        console.log('Received generated code:', generatedCode);
+        
+        // Update the editor with the generated code
         onCodeGenerated(generatedCode);
+        
+        // Clear the instruction input
         setInstruction('');
+        
+        // Show success message
+        toast.success('Code generated successfully!');
       } else {
         throw new Error('No code was generated. Please try again with a different prompt.');
       }
@@ -87,11 +106,11 @@ export function AiInstructionInput({
           <Button 
             onClick={handleGenerateCode}
             disabled={isLoading || !instruction.trim()}
-            className="h-9 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+            className="h-8 sm:h-9 px-3 sm:px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm sm:text-base font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-1 sm:gap-2"
           >
             {isLoading ? (
               <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin -ml-0.5 sm:-ml-1 mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -99,7 +118,7 @@ export function AiInstructionInput({
               </>
             ) : (
               <>
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Generate
               </>
             )}
