@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import { Button } from './ui/button';
 import { getFileExtension } from '@/lib/piston';
-import { Play, Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Play, Loader2, Sparkles, Wand2, Copy, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { SUPPORTED_LANGUAGES, DEFAULT_CODE_TEMPLATES } from '@/config/piston';
 import { executeCode, getRuntimes } from '@/lib/piston';
 import { AiInstructionInput } from './AiInstructionInput';
@@ -56,7 +57,8 @@ export default function CodeEditor({
 
   // Determine which language to use based on props and internal state
   const currentLanguage = onLanguageChange ? language : internalLanguage;
-  const [output, setOutput] = useState<string>('Run code to see output here');
+  const [output, setOutput] = useState('');
+  const [aiResponse, setAiResponse] = useState('Run code to see output here');
   const outputRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
@@ -142,12 +144,64 @@ export default function CodeEditor({
   };
 
   const handleCodeGenerated = (generatedCode: string) => {
+    // Clean up the generated code by removing markdown code blocks and backticks
+    const cleanedCode = generatedCode
+      // Remove code block markers with optional language specifier
+      .replace(/^```(?:\w+)?\s*([\s\S]*?)\s*```$/g, '$1')
+      // Remove any remaining backticks
+      .replace(/```/g, '')
+      // Remove any remaining language specifiers
+      .replace(/^\w+\n---\n/g, '')
+      // Trim whitespace
+      .trim();
+
+    // Display the cleaned code in the output area
+    setAiResponse(cleanedCode);
+    
+    // Also update the editor with the cleaned code if needed
     if (onCodeChange) {
-      onCodeChange(generatedCode);
+      onCodeChange(cleanedCode);
     }
     // Focus the editor after code is generated
     if (editorRef.current) {
       editorRef.current.focus();
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      // Modern clipboard API method
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } 
+      // Fallback method for non-secure contexts
+      else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        return new Promise<void>((resolve, reject) => {
+          const success = document.execCommand('copy');
+          document.body.removeChild(textArea);
+          if (!success) {
+            reject(new Error('Copy command was unsuccessful'));
+            return;
+          }
+          resolve();
+        });
+      }
+      toast.success('Copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      toast.error('Failed to copy to clipboard');
+      
+      // Fallback: Show the text in an alert for manual copy
+      alert('Please copy the following text manually:\n\n' + text);
     }
   };
 
@@ -263,19 +317,48 @@ export default function CodeEditor({
     setOutput('Executing code...');
 
     try {
-      const runtime = languages.find(l => l.value === language)?.runtime || language;
+      const langConfig = languages.find(l => l.value === language);
+      if (!langConfig) {
+        throw new Error(`Unsupported language: ${language}`);
+      }
+      
+      console.log('Executing code with config:', {
+        language: langConfig.runtime || language,
+        version: langConfig.version || '*',
+        codeLength: code.length,
+        inputLength: input?.length || 0
+      });
+      
+      console.log('Executing code with config:', {
+        language: langConfig.runtime || language,
+        version: langConfig.version || '*',
+        codeLength: code.length,
+        inputLength: input?.length || 0
+      });
+      
       const result = await executeCode({
-        language: runtime,
-        version: '*',
         code: code,
+        language: language,
+        version: langConfig.version || '*',
         stdin: input,
         args: []
       });
+
+      console.log('API Response:', result);
 
       // Process the execution result
       const outputLines: string[] = [];
       
       if (result) {
+        console.log('Run result:', result.run);
+        
+        // If there's no output but the execution was successful, show a success message
+        if ((!result.run?.stdout || result.run.stdout.trim() === '') && 
+            (!result.run?.stderr || result.run.stderr.trim() === '') &&
+            result.run?.code === 0) {
+          outputLines.push('✅ Code executed successfully but produced no output');
+          outputLines.push('Try adding some console.log() statements to see output');
+        }
         if (result.compile && result.compile.output) {
           outputLines.push('Compilation Output:');
           outputLines.push(result.compile.output);
@@ -470,19 +553,73 @@ export default function CodeEditor({
           <div className="flex-1 p-4 overflow-auto bg-white">
             <div 
               ref={outputRef}
-              className="font-mono text-sm whitespace-pre-wrap break-words"
+              className="relative font-mono text-sm whitespace-pre-wrap break-words bg-[#f8f9fa] rounded border border-[#dee2e6]"
               style={{ 
                 minHeight: '200px',
-                padding: '1rem',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '4px',
-                border: '1px solid #dee2e6',
+                maxHeight: 'calc(100vh - 200px)',
+                overflowY: 'auto',
                 fontFamily: 'monospace',
                 whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word'
+                wordBreak: 'break-word',
+                padding: '1rem',
               }}
             >
-              {output || 'Run your code to see the output here...'}
+              {aiResponse ? (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-purple-700">AI Response:</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                      onClick={() => copyToClipboard(aiResponse)}
+                    >
+                      <Copy className="h-3.5 w-3.5 mr-1" />
+                      Copy
+                    </Button>
+                  </div>
+                  <div className="whitespace-pre-wrap bg-white p-3 rounded border">
+                    {aiResponse}
+                  </div>
+                  {output && (
+                    <>
+                      <div className="border-t border-gray-200 my-2"></div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-green-700">Program Output:</span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                          onClick={() => copyToClipboard(output)}
+                        >
+                          <Copy className="h-3.5 w-3.5 mr-1" />
+                          Copy
+                        </Button>
+                      </div>
+                      <div className="whitespace-pre-wrap bg-white p-3 rounded border">
+                        {output}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : output ? (
+                <div className="relative">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute right-0 top-0 h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                    onClick={() => copyToClipboard(output)}
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    Copy
+                  </Button>
+                  <div className="whitespace-pre-wrap bg-white p-3 rounded border">
+                    {output}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-gray-400 italic">Run your code to see the output here...</div>
+              )}
             </div>
           </div>
         </div>

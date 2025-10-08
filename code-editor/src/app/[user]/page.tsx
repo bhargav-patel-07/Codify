@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import CodeEditor from '@/components/CodeEditor';
 import { Button } from '@/components/ui/button';
+import { SUPPORTED_LANGUAGES } from '@/config/piston';
 
 export default function UserPage({ params }: { params: Promise<{ user: string }> }) {
   const resolvedParams = React.use(params);
@@ -14,6 +15,7 @@ export default function UserPage({ params }: { params: Promise<{ user: string }>
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [language, setLanguage] = useState('javascript');
   
 
   useEffect(() => {
@@ -88,7 +90,12 @@ export default function UserPage({ params }: { params: Promise<{ user: string }>
       <main className="flex-1">
         <div className="container mx-auto p-4 h-full">
           <div className="max-w-7xl mx-auto h-full flex flex-col">
-            <CodeEditor />
+            <CodeEditor 
+              code="// Start coding here..."
+              language={language}
+              onLanguageChange={setLanguage}
+              onCodeChange={(code) => console.log('Code changed:', code)}
+            />
           </div>
         </div>
       </main>

@@ -1,10 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 
 const Input = () => {
   const [message, setMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+    const { isSignedIn, user } = useUser();
+  const [isChecked, setIsChecked] = useState(false);
+  
+  const handleToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isSignedIn) {
+      e.preventDefault();
+      router.push('/sign-in');
+      return;
+    }
+    setIsChecked(e.target.checked);
+  };
+
+  const handleSendClick = () => {
+    if (!isSignedIn) {
+      router.push('/sign-in');
+      return;
+    }
+    // If you need to handle the message sending logic, you can add it here
+    // For now, we'll just redirect to the user's profile
+    if (user?.username) {
+      router.push(`/${user.username}`);
+    } else if (user?.id) {
+      // Fallback to user ID if username is not available
+      router.push(`/user/${user.id}`);
+    }
+  };
 
   // Handle input focus for mobile devices
   useEffect(() => {
@@ -43,13 +72,20 @@ const Input = () => {
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type your message here..."
+          placeholder="Generate pyramid style star pattern in python..."
           className="message-input"
+          checked={isChecked}
         />
-        <button id="sendButton">
+        <button id="sendButton" onClick={handleSendClick}>
           <svg viewBox="0 0 664 663" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M646.293 331.888L17.7538 17.6187L155.245 331.888M646.293 331.888L17.753 646.157L155.245 331.888M646.293 331.888L318.735 330.228L155.245 331.888" fill="none" />
-            <path d="M646.293 331.888L17.7538 17.6187L155.245 331.888M646.293 331.888L17.753 646.157L155.245 331.888M646.293 331.888L318.735 330.228L155.245 331.888" stroke="#6c6c6c" strokeWidth="33.67" strokeLinecap="round" strokeLinejoin="round" />
+            <path 
+            d="M646.293 331.888L17.7538 17.6187L155.245 331.888M646.293 331.888L17.753 646.157L155.245 331.888M646.293 331.888L318.735 330.228L155.245 331.888" 
+            fill="none" 
+            stroke="#6c6c6c" 
+            strokeWidth="33.67" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          />
           </svg>
         </button>
       </div>

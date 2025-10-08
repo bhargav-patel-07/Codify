@@ -37,94 +37,92 @@ interface PistonExecuteResponse {
 /**
  * Execute code using Piston API
  */
-export async function executeCode({
+export const executeCode = async ({
   code,
   language,
   stdin = '',
   version = '*',
-  args = []
+  args = [],
+  timeout = 30000, // Increased timeout for API calls
 }: {
   code: string;
   language: string;
   stdin?: string;
   version?: string;
   args?: string[];
-}): Promise<PistonExecuteResponse> {
-  // Find the runtime for the selected language
-  const langConfig = SUPPORTED_LANGUAGES.find(lang => lang.value === language);
-  if (!langConfig) {
-    throw new Error(`Unsupported language: ${language}`);
-  }
-
-  const payload: PistonExecuteRequest = {
-    language: langConfig.runtime,
-    version: langConfig.version || '*',
-    files: [
-      {
-        name: `main.${getFileExtension(language)}`,
-        content: code
-      }
-    ],
-    stdin,
-    args,
-    compile_timeout: 10000, // 10 seconds
-    run_timeout: 10000, // 10 seconds
-    run_memory_limit: 1024 * 1024 * 100, // 100MB
-  };
-
+  timeout?: number;
+}): Promise<PistonExecuteResponse> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    // First check if the runtime is available
-    const runtimes = await getRuntimes();
-    const runtimeAvailable = runtimes.some(
-      r => r.language === langConfig.runtime && r.version === langConfig.version
-    );
-
-    if (!runtimeAvailable) {
-      const availableVersions = runtimes
-        .filter(r => r.language === langConfig.runtime)
-        .map(r => r.version);
-      
-      if (availableVersions.length > 0) {
-        throw new Error(
-          `Runtime ${langConfig.runtime} ${langConfig.version} is not available. ` +
-          `Available versions: ${availableVersions.join(', ')}`
-        );
-      } else {
-        throw new Error(
-          `Runtime ${langConfig.runtime} is not available on this server. ` +
-          `Available runtimes: ${[...new Set(runtimes.map(r => r.language))].join(', ')}`
-        );
-      }
+    const langConfig = SUPPORTED_LANGUAGES.find(lang => lang.value === language);
+    if (!langConfig) {
+      throw new Error(`Unsupported language: ${language}`);
     }
 
-    const response = await fetch(`${PISTON_API_URL}/execute`, {
+    // Use our API route instead of calling Piston directly
+    const response = await fetch('/api/piston', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        code,
+        language: langConfig.runtime,
+        // Forward the requested version directly (use '*' to let Piston choose latest)
+        version: version || '*',
+        stdin,
+        args,
+      }),
       signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
-
     if (!response.ok) {
-      const error = await response.text().catch(() => 'Unknown error');
-      let errorMessage = `API error: ${response.status} - ${error}`;
-      
-      // Add more user-friendly error messages for common issues
-      if (response.status === 400 && error.includes('runtime is unknown')) {
-        errorMessage = `The selected runtime (${langConfig.runtime} ${langConfig.version}) is not available. ` +
-                      `Please try a different language or version.`;
+      // Try to parse JSON; if it fails, capture raw text for diagnostics
+      let parsedError: any = null;
+      let rawText = '';
+      try {
+        parsedError = await response.json();
+      } catch {
+        try {
+          rawText = await response.text();
+        } catch {}
       }
-      
-      throw new Error(errorMessage);
+      console.error('API route error', {
+        status: response.status,
+        statusText: response.statusText,
+        error: parsedError,
+        body: rawText,
+      });
+      const message = (parsedError && (parsedError.error || parsedError.message))
+        || rawText
+        || `Failed to execute code (status ${response.status})`;
+      throw new Error(message);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('API response:', data);
+
+    // Transform the response to match the expected format
+    return {
+      language: data.language || language,
+      version: data.version || version,
+      run: {
+        stdout: data.run?.stdout || data.run?.output || '',
+        stderr: data.run?.stderr || '',
+        output: data.run?.output || data.run?.stdout || '',
+        code: data.run?.code || (data.run?.stderr ? 1 : 0),
+        signal: data.run?.signal || null,
+      },
+      compile: data.compile ? {
+        stdout: data.compile.stdout || '',
+        stderr: data.compile.stderr || '',
+        output: data.compile.output || '',
+        code: data.compile.code || 0,
+        signal: data.compile.signal || null,
+      } : undefined,
+    };
   } catch (error: unknown) {
     clearTimeout(timeoutId);
     if (error instanceof Error) {
@@ -141,36 +139,28 @@ export async function executeCode({
 /**
  * Get the latest runtimes from Piston API
  */
-export async function getRuntimes(): Promise<Array<{
+export const getRuntimes = async (): Promise<Array<{
   language: string;
   version: string;
   aliases: string[];
   runtime?: string;
-}>> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
+}>> => {
   try {
-    const response = await fetch(`${PISTON_API_URL}/runtimes`, {
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch runtimes: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error('Error fetching runtimes:', error);
-    // Return a default set of runtimes if the API is not available
+    // Return the supported languages from our config
     return SUPPORTED_LANGUAGES.map(lang => ({
-      language: lang.runtime,
-      version: 'latest',
+      language: lang.runtime || lang.value,
+      version: lang.version,
       aliases: [lang.value],
-      runtime: lang.runtime,
+      runtime: lang.runtime || lang.value,
+    }));
+  } catch (error) {
+    console.error('Error getting runtimes, using defaults:', error);
+    // Return a default set of runtimes if something goes wrong
+    return SUPPORTED_LANGUAGES.map(lang => ({
+      language: lang.runtime || lang.value,
+      version: lang.version,
+      aliases: [lang.value],
+      runtime: lang.runtime || lang.value,
     }));
   }
 }
@@ -179,6 +169,17 @@ export async function getRuntimes(): Promise<Array<{
  * Get file extension for a programming language
  */
 export function getFileExtension(language: string): string {
+  // First check if we have the language in our SUPPORTED_LANGUAGES with an extension
+  const langConfig = SUPPORTED_LANGUAGES.find(lang => 
+    lang.value.toLowerCase() === language.toLowerCase() ||
+    lang.runtime.toLowerCase() === language.toLowerCase()
+  );
+
+  if (langConfig && 'extension' in langConfig && langConfig.extension) {
+    return langConfig.extension;
+  }
+
+  // Fallback to a default set of extensions
   const extensions: Record<string, string> = {
     python: 'py',
     javascript: 'js',
@@ -191,7 +192,17 @@ export function getFileExtension(language: string): string {
     php: 'php',
     ruby: 'rb',
     swift: 'swift',
-    kotlin: 'kt'
+    kotlin: 'kt',
+    csharp: 'cs',
+    lua: 'lua',
+    r: 'r',
+    bash: 'sh',
+    shell: 'sh',
+    html: 'html',
+    css: 'css',
+    json: 'json',
+    markdown: 'md',
+    text: 'txt'
   };
 
   return extensions[language] || 'txt';

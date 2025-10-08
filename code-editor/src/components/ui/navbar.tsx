@@ -184,8 +184,12 @@ export function DesktopNavbar() {
         {/* Navigation Links */}
         <div className="hidden md:flex items-center gap-1 bg-white/80 rounded-full px-3 py-1.5 border border-gray-200">
           <a
-            href="#"
+            href="#home"
             className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full hover:bg-gray-100 transition whitespace-nowrap"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('home')?.scrollIntoView({ behavior: 'smooth' });
+            }}
           >
             <Home size={16} />
             <span>Home</span>
@@ -193,6 +197,10 @@ export function DesktopNavbar() {
           <a
             href="#features"
             className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full hover:bg-gray-100 transition whitespace-nowrap"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+            }}
           >
             <Settings size={16} />
             <span>Features</span>
@@ -200,6 +208,10 @@ export function DesktopNavbar() {
           <a
             href="#contact"
             className="flex items-center gap-1.5 text-sm px-3 py-1 rounded-full hover:bg-gray-100 transition whitespace-nowrap"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+            }}
           >
             <User size={16} />
             <span>Contact</span>

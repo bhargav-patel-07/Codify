@@ -1,110 +1,116 @@
 import { SUPPORTED_LANGUAGES } from '@/config/piston';
 
-const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+// Using OpenRouter API with Grok model
+const API_KEY = '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';
+const MODEL = 'x-ai/grok-4-fast:free';
+const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-if (!GROQ_API_KEY) {
-  console.warn('GROQ_API_KEY is not set. Code generation will not work.');
+if (!API_KEY) {
+  console.warn('API key is not set. Code generation will not work.');
 }
 
-export interface GroqMessage {
+export interface AIChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-export async function generateCodeWithGroq(instruction: string, language: string | undefined): Promise<string> {
-  if (!GROQ_API_KEY) {
-    throw new Error('Groq API key is not configured');
+export async function generateCodeWithGroq(instruction: string, language: string = 'python'): Promise<string> {
+  if (!API_KEY) {
+    throw new Error('API key is not configured');
   }
 
   // Default to python if language is not provided or not found in supported languages
   const defaultLanguage = 'python';
   const langToUse = language || defaultLanguage;
-  
   const langConfig = SUPPORTED_LANGUAGES.find(lang => lang.value === langToUse);
+
   if (!langConfig) {
     console.warn(`Language '${langToUse}' not found in supported languages, defaulting to '${defaultLanguage}'`);
     // Fall back to python if the provided language is not supported
     return generateCodeWithGroq(instruction, defaultLanguage);
   }
 
-  const messages: GroqMessage[] = [
+  const messages: AIChatMessage[] = [
     {
       role: 'system',
       content: `You are a helpful coding assistant that generates clean, efficient, and well-commented code. 
-      Respond with just the code, no additional explanations or markdown code blocks.`
+      The user wants to write code in ${langToUse}. 
+      Only respond with the code, no explanations or markdown formatting.`
     },
     {
       role: 'user',
-      content: `Write a ${langToUse} program that: ${instruction}\n\n` +
-        `Requirements:\n` +
-        `1. Include detailed comments explaining the code\n` +
-        `2. Follow best practices for ${langToUse}\n` +
-        `3. Make sure the code is complete and runnable\n` +
-        `4. Do not include any markdown code blocks or backticks`
+      content: instruction
     }
   ];
 
-  console.log('Sending request to Groq API with messages:', JSON.stringify(messages, null, 2));
+  console.log('Sending request to AI API with messages:', JSON.stringify(messages, null, 2));
 
   const maxRetries = 3;
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Attempt ${attempt} to call Groq API...`);
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      console.log(`Attempt ${attempt} to call AI API...`);
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GROQ_API_KEY}`
+          'Authorization': `Bearer ${API_KEY}`,
+          'HTTP-Referer': 'https://your-site.com', // Required for OpenRouter
+          'X-Title': 'Code Editor' // Optional, shown in OpenRouter logs
         },
         body: JSON.stringify({
-          model: 'llama3-70b-8192',
-          messages,
+          model: MODEL,
+          messages: messages,
           temperature: 0.7,
-          max_tokens: 2000
+          max_tokens: 2048
         })
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Groq API error:', errorText);
+        console.error('AI API error:', errorText);
         
         // If it's a rate limit or server error, wait and retry
         if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
           const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
-          console.log(`Waiting ${waitTime}ms before retry...`);
+          console.log(`Rate limited. Waiting ${waitTime}ms before retry...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
           continue;
         }
         
-        throw new Error(`Groq API error: ${response.status} - ${errorText}`);
+        throw new Error(`AI API error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('Received response from Groq API:', JSON.stringify(data, null, 2));
+      console.log('Received response from AI API:', JSON.stringify(data, null, 2));
       
-      let generatedCode = data.choices[0]?.message?.content?.trim() || '';
+      // Handle OpenRouter response format
+      let generatedCode = data.choices?.[0]?.message?.content?.trim() || '';
       
-      // Remove any markdown code blocks if present
-      generatedCode = generatedCode.replace(/^```(?:\w+)?\n([\s\S]*?)\n```/g, '$1');
+      generatedCode = generatedCode
+        .replace(/^```(?:\w+)?\s*([\s\S]*?)\s*```$/g, '$1')
+        .replace(/```/g, '')
+        .trim();
       
-      console.log('Processed generated code:', generatedCode);
+      // If the code is empty or too short, it might be an error
+      if (!generatedCode || generatedCode.length < 5) {
+        throw new Error('Generated code is empty or too short');
+      }
+      
       return generatedCode;
     } catch (error) {
-      lastError = error as Error;
       console.error(`Attempt ${attempt} failed:`, error);
+      lastError = error as Error;
       
-      // If it's not the last attempt, wait before retrying
+      // If this is the last attempt, don't wait before retrying
       if (attempt < maxRetries) {
-        const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
-        console.log(`Waiting ${waitTime}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
   }
   
   // If we get here, all attempts failed
-  console.error('All attempts to call Groq API failed');
+  console.error('All attempts to call AI API failed');
   throw lastError || new Error('Failed to generate code after multiple attempts');
 }

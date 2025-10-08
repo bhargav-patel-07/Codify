@@ -25,14 +25,12 @@ export function AiInstructionInput({
   const [instruction, setInstruction] = useState('');
   const [error, setError] = useState('');
 
-  const handleGenerateCode = async () => {
-    if (!instruction.trim()) {
-      setError('Please enter an instruction');
-      return;
-    }
-
-    setIsLoading(true);
+  const handleGenerateCode = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!instruction.trim()) return;
+    
     setError('');
+    setIsLoading(true);
 
     try {
       console.log('Clearing editor...');
@@ -49,18 +47,26 @@ export function AiInstructionInput({
                    `Requirements:\n` +
                    `1. Include detailed comments explaining the code\n` +
                    `2. Follow best practices for ${language || 'Python'}\n` +
-                   `3. Make sure the code is complete and runnable\n` +
+                   `3. Ensure the code is well-structured and readable\n` +
                    `4. Include example usage if applicable\n` +
                    `5. Do not include any markdown code blocks or backticks`;
       
-      console.log('Sending request to Groq API with prompt:', prompt);
+      console.log('Sending request to AI API with prompt:', prompt);
       let generatedCode = await generateCodeWithGroq(prompt, language || 'python');
       
       if (generatedCode) {
-        // Ensure we don't have any markdown code blocks
-        generatedCode = generatedCode.replace(/^```(?:\w+)?\n([\s\S]*?)\n```/g, '$1');
+        console.log('Raw generated code:', generatedCode);
         
-        console.log('Received generated code:', generatedCode);
+        // Clean up the generated code
+        generatedCode = generatedCode
+          // Remove code block markers
+          .replace(/^```(?:\w+)?\s*([\s\S]*?)\s*```$/g, '$1')
+          // Remove any remaining ```
+          .replace(/```/g, '')
+          // Trim whitespace
+          .trim();
+          
+        console.log('Cleaned generated code:', generatedCode);
         
         // Update the editor with the generated code
         onCodeGenerated(generatedCode);
@@ -69,14 +75,18 @@ export function AiInstructionInput({
         setInstruction('');
         
         // Show success message
-        toast.success('Code generated successfully!');
+        toast.success('Code generated successfully!', {
+          description: 'The AI has generated the code based on your instructions.'
+        });
       } else {
         throw new Error('No code was generated. Please try again with a different prompt.');
       }
     } catch (error: unknown) {
       console.error('Error generating code:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate code';
-      toast.error(errorMessage);
+      toast.error('Error', {
+        description: errorMessage
+      });
       setIsLoading(false);
     } finally {
       setIsLoading(false);
@@ -84,7 +94,7 @@ export function AiInstructionInput({
   };
 
   return (
-    <div className="space-y-3">
+    <form onSubmit={handleGenerateCode} className="space-y-3">
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Wand2 className="h-5 w-5 text-purple-500" />
@@ -98,13 +108,13 @@ export function AiInstructionInput({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              handleGenerateCode();
+              handleGenerateCode(e);
             }
           }}
         />
         <div className="absolute right-2 bottom-2 flex items-center gap-2">
           <Button 
-            onClick={handleGenerateCode}
+            type="submit"
             disabled={isLoading || !instruction.trim()}
             className="h-8 sm:h-9 px-3 sm:px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-sm sm:text-base font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-1 sm:gap-2"
           >
@@ -134,8 +144,6 @@ export function AiInstructionInput({
           <span>{error}</span>
         </div>
       )}
-      
-     
-    </div>
+    </form>
   );
 }

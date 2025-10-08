@@ -11,12 +11,25 @@ export function CodeEditorWithAI() {
 
   const handleCodeGenerated = (generatedCode: string) => {
     console.log('handleCodeGenerated called with code:', generatedCode);
-    setCode(generatedCode);
-    // Force a re-render by updating the state again in the next tick
+    
+    // Clean up the code by removing any markdown code blocks
+    let cleanCode = generatedCode
+      // Remove code block markers
+      .replace(/^```(?:\w+)?\s*([\s\S]*?)\s*```$/g, '$1')
+      // Remove any remaining ```
+      .replace(/```/g, '')
+      // Trim whitespace
+      .trim();
+      
+    console.log('Cleaned code:', cleanCode);
+    
+    // Update the editor with the cleaned code
+    setCode(cleanCode);
+    
+    // Force a re-render to ensure the editor updates
     setTimeout(() => {
-      console.log('Forcing state update...');
-      setCode(prev => prev);
-    }, 100);
+      setCode(prev => prev.trim());
+    }, 50);
   };
 
   const handleClearEditor = () => {

@@ -1,11 +1,34 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import styled from 'styled-components';
 
 const Switch = () => {
+  const router = useRouter();
+  const { isSignedIn } = useUser();
+  const [isChecked, setIsChecked] = useState(false);
+
+  const handleToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isSignedIn) {
+      e.preventDefault();
+      router.push('/sign-in');
+      return;
+    }
+    setIsChecked(e.target.checked);
+    // Add any additional logic for the toggle here
+  };
+
   return (
     <StyledWrapper>
       <label htmlFor="filter" className="switch" aria-label="Toggle Filter">
-        <input type="checkbox" id="filter" />
+        <input 
+          type="checkbox" 
+          id="filter" 
+          checked={isChecked}
+          onChange={handleToggle}
+        />
         <span>HomePage</span>
         <span>Code Editor</span>
       </label>
